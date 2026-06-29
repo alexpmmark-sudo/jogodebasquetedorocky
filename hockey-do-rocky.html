@@ -33,15 +33,15 @@ body{background:#0a1628;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 .btn-ranking-link{background:rgba(255,255,255,0.85);border:2px solid #0d3a5c;color:#0d3a5c;font-size:14px;padding:10px 24px;border-radius:10px;cursor:pointer;margin-top:4px;font-weight:700;}
 
 /* JOGO */
-#screen-jogo{padding:0;background:#000;}
-#game-container{width:100%;max-width:420px;height:100vh;position:relative;overflow:hidden;background:#0a2a0a;}
-#canvas{width:100%;height:100%;display:block;touch-action:none;}
-#hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:rgba(0,0,0,0.7);z-index:10;}
+#screen-jogo{padding:0;background:#0a1628;}
+#game-container{width:100%;max-width:420px;height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;background:#0a1628;}
+#canvas{width:100%;flex:1;display:block;touch-action:none;}
+#hud{position:relative;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:linear-gradient(180deg,#0d2438,#0a1628);z-index:10;border-bottom:3px solid #F0331E;flex-shrink:0;}
 .hud-score{font-size:22px;font-weight:900;color:#F0331E;}
 .hud-timer{font-size:22px;font-weight:900;color:#fff;background:#F0331E;padding:4px 14px;border-radius:20px;}
 .hud-ai-score{font-size:22px;font-weight:900;color:#4af;}
 #rocky-side{position:absolute;right:-10px;bottom:80px;width:110px;z-index:5;opacity:0.85;pointer-events:none;}
-#btn-pausar{position:absolute;top:58px;right:8px;z-index:20;background:rgba(0,0,0,0.45);border:2px solid #fff;color:#fff;width:34px;height:34px;border-radius:50%;font-size:14px;cursor:pointer;display:none;padding:0;}
+#btn-pausar{position:absolute;top:64px;right:8px;z-index:20;background:rgba(0,0,0,0.45);border:2px solid #fff;color:#fff;width:34px;height:34px;border-radius:50%;font-size:14px;cursor:pointer;display:none;padding:0;}
 #screen-jogo.active #btn-pausar{display:block;}
 #pause-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:30;align-items:center;justify-content:center;}
 #pause-overlay.show{display:flex;}
@@ -305,9 +305,8 @@ const ctx = canvas.getContext('2d');
 
 let W, H;
 function resizeCanvas() {
-  const container = document.getElementById('game-container');
-  W = container.clientWidth;
-  H = container.clientHeight;
+  W = canvas.clientWidth;
+  H = canvas.clientHeight;
   canvas.width = W;
   canvas.height = H;
 }
@@ -535,31 +534,39 @@ function updatePuck() {
 
 // DESENHO
 function drawRink() {
-  // Fundo gelo - gradiente azul gelado
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#dff2fb');
-  grad.addColorStop(0.5, '#eaf7fd');
-  grad.addColorStop(1, '#dff2fb');
+  // Base de gelo com gradiente diagonal (dá profundidade)
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#eef9ff');
+  grad.addColorStop(0.35, '#dcf0fb');
+  grad.addColorStop(0.65, '#cfeaf8');
+  grad.addColorStop(1, '#e4f4fc');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Brilho de gelo (manchas claras translúcidas)
+  // Faixa de luz central (reflexo de holofote)
+  const spot = ctx.createRadialGradient(W*0.5, H*0.5, 0, W*0.5, H*0.5, W*0.9);
+  spot.addColorStop(0, 'rgba(255,255,255,0.45)');
+  spot.addColorStop(0.5, 'rgba(255,255,255,0.12)');
+  spot.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = spot;
+  ctx.fillRect(0, 0, W, H);
+
+  // Brilhos de gelo (manchas suaves)
   ctx.save();
-  ctx.globalAlpha = 0.4;
   for (const s of iceShines) {
     const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
-    g.addColorStop(0, 'rgba(255,255,255,0.7)');
+    g.addColorStop(0, 'rgba(255,255,255,0.5)');
     g.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = g;
-    ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r, s.r*0.4, s.a, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r, s.r*0.35, s.a, 0, Math.PI*2); ctx.fill();
   }
   ctx.restore();
 
-  // Riscos de patins (linhas finas curvas)
+  // Riscos de patins (curvas finas brilhantes)
   ctx.save();
-  ctx.globalAlpha = 0.12;
-  ctx.strokeStyle = '#8fb8cc';
-  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.18;
+  ctx.strokeStyle = '#a8cfe0';
+  ctx.lineWidth = 1.5;
   for (const sc of skateMarks) {
     ctx.beginPath();
     ctx.moveTo(sc.x1, sc.y1);
@@ -568,50 +575,66 @@ function drawRink() {
   }
   ctx.restore();
 
+  // Reflexo vertical sutil (brilho de rinque)
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  for (let i = 0; i < W; i += 4) {
+    ctx.strokeStyle = i % 8 === 0 ? '#fff' : '#bce0f0';
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke();
+  }
+  ctx.restore();
+
   // Círculo central vermelho
-  ctx.strokeStyle = 'rgba(210,40,30,0.7)';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(200,40,30,0.55)';
+  ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.arc(W/2, H/2, W*0.15, 0, Math.PI*2); ctx.stroke();
-  ctx.fillStyle = 'rgba(210,40,30,0.6)';
+  ctx.fillStyle = 'rgba(200,40,30,0.5)';
   ctx.beginPath(); ctx.arc(W/2, H/2, 5, 0, Math.PI*2); ctx.fill();
 
   // Linha central vermelha
-  ctx.strokeStyle = 'rgba(210,40,30,0.7)';
+  ctx.strokeStyle = 'rgba(200,40,30,0.55)';
   ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
 
   // Linhas azuis
-  ctx.strokeStyle = 'rgba(30,90,180,0.6)';
+  ctx.strokeStyle = 'rgba(30,90,180,0.5)';
   ctx.lineWidth = 4;
   ctx.beginPath(); ctx.moveTo(0, H*0.33); ctx.lineTo(W, H*0.33); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0, H*0.67); ctx.lineTo(W, H*0.67); ctx.stroke();
 
   // Círculos de faceoff
-  ctx.strokeStyle = 'rgba(210,40,30,0.4)';
+  ctx.strokeStyle = 'rgba(200,40,30,0.3)';
   ctx.lineWidth = 1.5;
   for (const fy of [H*0.2, H*0.8]) {
     for (const fx of [W*0.25, W*0.75]) {
       ctx.beginPath(); ctx.arc(fx, fy, W*0.08, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = 'rgba(200,40,30,0.25)';
+      ctx.beginPath(); ctx.arc(fx, fy, 3, 0, Math.PI*2); ctx.fill();
     }
   }
 
-  // Bordas da pista
+  // Bordas da pista (efeito de tabela com sombra interna)
   ctx.strokeStyle = '#cc1100';
   ctx.lineWidth = 6;
   ctx.strokeRect(3, 3, W-6, H-6);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 14;
+  ctx.strokeRect(13, 13, W-26, H-26);
+  ctx.restore();
 
   // GOLS
   const goalLeft = W/2 - W*GOAL_W/2;
   const goalRight = W/2 + W*GOAL_W/2;
-  ctx.strokeStyle = '#4af';
+  ctx.strokeStyle = '#3399ff';
   ctx.lineWidth = 4;
   ctx.strokeRect(goalLeft, 0, W*GOAL_W, GOAL_H);
-  ctx.fillStyle = 'rgba(68,170,255,0.2)';
+  ctx.fillStyle = 'rgba(51,153,255,0.25)';
   ctx.fillRect(goalLeft, 0, W*GOAL_W, GOAL_H);
   ctx.strokeStyle = '#F0331E';
   ctx.lineWidth = 4;
   ctx.strokeRect(goalLeft, H-GOAL_H, W*GOAL_W, GOAL_H);
-  ctx.fillStyle = 'rgba(240,51,30,0.2)';
+  ctx.fillStyle = 'rgba(240,51,30,0.25)';
   ctx.fillRect(goalLeft, H-GOAL_H, W*GOAL_W, GOAL_H);
 }
 
