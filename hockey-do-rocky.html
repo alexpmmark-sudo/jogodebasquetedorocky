@@ -322,12 +322,12 @@ let skateMarks = [];
 const GOAL_W = 0.5;
 const GOAL_H = 18;
 const AI_SPEED = 1.7;
-const FRICTION = 0.985;
-const MAX_SPEED = 18;
+const FRICTION = 0.992;
+const MAX_SPEED = 26;
 
 function initGame() {
   resizeCanvas();
-  puck = {x: W/2, y: H/2, vx: (Math.random()-0.5)*6, vy: 4, r: W*0.055};
+  puck = {x: W/2, y: H/2, vx: (Math.random()-0.5)*8, vy: 7, r: W*0.055};
   playerPaddle = {x: W/2, y: H*0.8, r: W*0.07};
   aiPaddle = {x: W/2, y: H*0.18, r: W*0.07};
 
@@ -423,8 +423,8 @@ function updatePlayerPaddle() {
   prevPlayerY = playerPaddle.y;
   const targetX = Math.max(playerPaddle.r, Math.min(W - playerPaddle.r, lastTouchX));
   const targetY = Math.max(H/2 + 20, Math.min(H - playerPaddle.r - GOAL_H, lastTouchY));
-  playerPaddle.x += (targetX - playerPaddle.x) * 0.4;
-  playerPaddle.y += (targetY - playerPaddle.y) * 0.4;
+  playerPaddle.x += (targetX - playerPaddle.x) * 0.95;
+  playerPaddle.y += (targetY - playerPaddle.y) * 0.95;
 }
 
 function updateAI() {
@@ -505,8 +505,8 @@ function checkGoal() {
 function resetPuck(dir) {
   puck.x = W/2;
   puck.y = H/2;
-  puck.vx = (Math.random()-0.5)*4;
-  puck.vy = dir * 5;
+  puck.vx = (Math.random()-0.5)*7;
+  puck.vy = dir * 8;
 }
 
 function updatePuck() {
@@ -515,7 +515,7 @@ function updatePuck() {
 
   // Mínimo de velocidade
   const speed = Math.sqrt(puck.vx*puck.vx + puck.vy*puck.vy);
-  if (speed < 3 && speed > 0) { puck.vx = puck.vx/speed*3; puck.vy = puck.vy/speed*3; }
+  if (speed < 6 && speed > 0) { puck.vx = puck.vx/speed*6; puck.vy = puck.vy/speed*6; }
 
   puck.x += puck.vx;
   puck.y += puck.vy;
