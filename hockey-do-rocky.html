@@ -855,7 +855,24 @@ async function verRanking() {
   try {
     const q = fbQuery(fbCollection(db, 'ranking'), fbOrderBy('score','desc'));
     const snap = await fbGetDocs(q);
-    const todos = snap.docs.map(d => d.data()).filter(r => r.jogo === 'hockey');
+    let todos = snap.docs.map(d => d.data()).filter(r => r.jogo === 'hockey');
+
+    // Canadá: manter apenas o jogo mais recente (os outros eram testes)
+    const canadas = todos.filter(r => r.country === 'Canadá');
+    if (canadas.length > 1) {
+      // ordena por timestamp/data e mantém só o mais recente
+      canadas.sort((a, b) => {
+        const ta = a.timestamp && a.timestamp.seconds ? a.timestamp.seconds : 0;
+        const tb = b.timestamp && b.timestamp.seconds ? b.timestamp.seconds : 0;
+        return tb - ta;
+      });
+      const canadaRecente = canadas[0];
+      // remove todos os Canadá e adiciona só o mais recente de volta
+      todos = todos.filter(r => r.country !== 'Canadá');
+      todos.push(canadaRecente);
+      // reordena por score
+      todos.sort((a, b) => (b.score||0) - (a.score||0));
+    }
 
     // Top 3 países diferentes
     const top3 = [];
