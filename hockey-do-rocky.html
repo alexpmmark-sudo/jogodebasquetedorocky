@@ -83,7 +83,7 @@ body{background:#0a1628;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <div id="cadastro-content">
   <div class="game-title">Hockey do Rocky 🏒</div>
   <div class="game-subtitle">Copa dos Valores 2026</div>
-  <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="" onerror="this.style.display='none'">
+  <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="Rocky">
   <div class="input-group">
     <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
     <select id="input-pais">
@@ -184,8 +184,10 @@ async function initFirebase() {
 initFirebase();
 
 // ROCKY IMAGE
-const ROCKY_URL = "https://raw.githubusercontent.com/alexpmmark-sudo/jogodebasquetedorocky/main/rocky-hockey.png";
-document.getElementById('rocky-cadastro-img').src = ROCKY_URL;
+const ROCKY_URL = "https://raw.githubusercontent.com/alexpmmark-sudo/jogodebasquetedorocky/main/rocky-hockey.png?v=3";
+const imgRocky = document.getElementById('rocky-cadastro-img');
+imgRocky.src = ROCKY_URL;
+imgRocky.style.display = 'block';
 
 // DESENHA BANDEIRA REAL DENTRO DE UM RETÂNGULO (clipado em círculo)
 function desenharBandeira(cx, cy, raio, pais) {
