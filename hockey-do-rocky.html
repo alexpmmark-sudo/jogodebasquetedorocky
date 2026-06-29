@@ -6,8 +6,8 @@
 <title>Hockey do Rocky 🏒</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:#0a1628;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;}
-#app{width:100vw;max-width:420px;min-height:100vh;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+body{background:#cfeaf8;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+#app{width:100vw;max-width:520px;min-height:100vh;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 
 /* TELAS */
 .screen{display:none;width:100%;flex-direction:column;align-items:center;padding:20px;}
@@ -34,7 +34,7 @@ body{background:#0a1628;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 
 /* JOGO */
 #screen-jogo{padding:0;background:#0a1628;}
-#game-container{width:100%;max-width:420px;height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;background:#0a1628;}
+#game-container{width:100%;max-width:520px;height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;background:#0a1628;}
 #canvas{width:100%;flex:1;display:block;touch-action:none;}
 #hud{position:relative;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:linear-gradient(180deg,#0d2438,#0a1628);z-index:10;border-bottom:3px solid #F0331E;flex-shrink:0;}
 .hud-score{font-size:22px;font-weight:900;color:#F0331E;}
@@ -397,7 +397,7 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', e => { touchActive = false; }, {passive: false});
 
-canvas.addEventListener('mousemove', e => {
+canvas.addEventListener('mousedown', e => {
   if (!jogoAtivo) return;
   const rect = canvas.getBoundingClientRect();
   const scaleX = W / rect.width;
@@ -406,6 +406,16 @@ canvas.addEventListener('mousemove', e => {
   lastTouchY = (e.clientY - rect.top) * scaleY;
   touchActive = true;
 });
+canvas.addEventListener('mousemove', e => {
+  if (!jogoAtivo || !touchActive) return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  lastTouchX = (e.clientX - rect.left) * scaleX;
+  lastTouchY = (e.clientY - rect.top) * scaleY;
+});
+canvas.addEventListener('mouseup', () => { touchActive = false; });
+canvas.addEventListener('mouseleave', () => { touchActive = false; });
 
 function updatePlayerPaddle() {
   if (!touchActive) return;
@@ -866,7 +876,7 @@ async function verRanking() {
         <span class="rank-pos">${medals[i]}</span>
         <div class="rank-info">
           <div class="rank-nome">${r.name||'—'}</div>
-          <div class="rank-pais">${r.country||'—'}</div>
+          <div class="rank-pais">${r.country||'—'} · 🕐 ${r.finishedLocal||'—'}</div>
         </div>
         <span class="rank-pts">${r.score||0} gols</span>
       </div>`).join('') : '<div class="loading">Nenhum resultado ainda!</div>';
@@ -877,7 +887,7 @@ async function verRanking() {
         <span class="rank-pos" style="font-size:14px;">${i+1}</span>
         <div class="rank-info">
           <div class="rank-nome" style="font-size:13px;">${r.name||'—'}</div>
-          <div class="rank-pais">${r.country||'—'}</div>
+          <div class="rank-pais">${r.country||'—'} · 🕐 ${r.finishedLocal||'—'}</div>
         </div>
         <span class="rank-pts" style="font-size:15px;">${r.score||0}</span>
       </div>`).join('');
