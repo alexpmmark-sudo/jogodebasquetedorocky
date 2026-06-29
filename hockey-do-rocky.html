@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hockey do Rocky 🏒</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:#0a1628;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+#app{width:100vw;max-width:420px;min-height:100vh;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+/* TELAS */
+.screen{display:none;width:100%;flex-direction:column;align-items:center;padding:20px;}
+.screen.active{display:flex;}
+
+/* TELA CADASTRO */
+#screen-cadastro{background:linear-gradient(180deg,#dcf0fa 0%,#c4e6f5 45%,#a8d8ee 100%);min-height:100vh;height:100vh;justify-content:center;align-items:center;gap:14px;overflow:hidden;padding:30px 20px;position:relative;}
+#rink-bg{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+#snow-cadastro{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+#cadastro-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;}
+.gelo-glow{display:none;}
+.logo-top{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.logo-top img{height:50px;}
+.game-title{font-size:30px;font-weight:900;color:#0d3a5c;text-align:center;text-transform:uppercase;letter-spacing:2px;text-shadow:0 2px 8px rgba(255,255,255,0.8),0 0 20px rgba(255,255,255,0.6);}
+.game-subtitle{font-size:13px;color:#1a5680;text-align:center;margin-top:-8px;letter-spacing:1px;font-weight:700;}
+.rocky-cadastro{width:180px;margin:4px 0;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.3));}
+.input-group{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;}
+.input-group input, .input-group select{width:100%;padding:14px 16px;border-radius:12px;border:2px solid #F0331E;background:rgba(255,255,255,0.92);color:#0d3a5c;font-size:16px;outline:none;font-weight:600;}
+.input-group input::placeholder{color:#789;}
+.input-group select option{background:#fff;color:#0d3a5c;}
+.btn-jogar{width:100%;max-width:320px;padding:16px;background:#F0331E;border:none;border-radius:14px;color:#fff;font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:2px;cursor:pointer;margin-top:8px;box-shadow:0 4px 20px rgba(240,51,30,0.5);}
+.btn-jogar:active{transform:scale(0.97);}
+.btn-ranking-link{background:rgba(255,255,255,0.85);border:2px solid #0d3a5c;color:#0d3a5c;font-size:14px;padding:10px 24px;border-radius:10px;cursor:pointer;margin-top:4px;font-weight:700;}
+
+/* JOGO */
+#screen-jogo{padding:0;background:#000;}
+#game-container{width:100%;max-width:420px;height:100vh;position:relative;overflow:hidden;background:#0a2a0a;}
+#canvas{width:100%;height:100%;display:block;touch-action:none;}
+#hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:rgba(0,0,0,0.7);z-index:10;}
+.hud-score{font-size:22px;font-weight:900;color:#F0331E;}
+.hud-timer{font-size:22px;font-weight:900;color:#fff;background:#F0331E;padding:4px 14px;border-radius:20px;}
+.hud-ai-score{font-size:22px;font-weight:900;color:#4af;}
+#rocky-side{position:absolute;right:-10px;bottom:80px;width:110px;z-index:5;opacity:0.85;pointer-events:none;}
+#btn-pausar{position:absolute;top:58px;right:8px;z-index:20;background:rgba(0,0,0,0.45);border:2px solid #fff;color:#fff;width:34px;height:34px;border-radius:50%;font-size:14px;cursor:pointer;display:none;padding:0;}
+#screen-jogo.active #btn-pausar{display:block;}
+#pause-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:30;align-items:center;justify-content:center;}
+#pause-overlay.show{display:flex;}
+.pause-box{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.pause-title{font-size:28px;font-weight:900;color:#fff;}
+
+/* RESULTADO */
+#screen-resultado{background:linear-gradient(180deg,#0d1f3c,#0a1628);min-height:100vh;justify-content:center;gap:14px;}
+.resultado-titulo{font-size:22px;font-weight:900;color:#fff;text-align:center;}
+.resultado-placar{font-size:48px;font-weight:900;color:#F0331E;text-align:center;}
+.resultado-sub{font-size:14px;color:#aaa;text-align:center;}
+.btn-salvar{width:100%;max-width:320px;padding:14px;background:#F0331E;border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:900;cursor:pointer;}
+.btn-jogar-dnv{width:100%;max-width:320px;padding:14px;background:transparent;border:2px solid #F0331E;border-radius:14px;color:#F0331E;font-size:16px;font-weight:700;cursor:pointer;}
+
+/* RANKING */
+#screen-ranking{background:linear-gradient(180deg,#0d1f3c,#0a1628);min-height:100vh;justify-content:flex-start;padding-top:40px;gap:10px;}
+.ranking-titulo{font-size:22px;font-weight:900;color:#fff;text-align:center;margin-bottom:8px;}
+.ranking-item{width:100%;max-width:360px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.07);border-radius:12px;padding:10px 14px;}
+.ranking-item.top1{background:linear-gradient(90deg,rgba(255,215,0,0.2),rgba(255,215,0,0.05));border:1px solid gold;}
+.ranking-item.top2{background:linear-gradient(90deg,rgba(192,192,192,0.2),rgba(192,192,192,0.05));border:1px solid silver;}
+.ranking-item.top3{background:linear-gradient(90deg,rgba(205,127,50,0.2),rgba(205,127,50,0.05));border:1px solid #cd7f32;}
+.rank-pos{font-size:20px;min-width:32px;text-align:center;}
+.rank-info{flex:1;}
+.rank-nome{font-size:15px;font-weight:700;color:#fff;}
+.rank-pais{font-size:12px;color:#aaa;}
+.rank-pts{font-size:18px;font-weight:900;color:#F0331E;}
+.btn-voltar{background:transparent;border:2px solid rgba(255,255,255,0.3);color:#fff;font-size:14px;padding:10px 24px;border-radius:10px;cursor:pointer;margin-top:8px;}
+.loading{color:#aaa;font-size:14px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- CADASTRO -->
+<div id="screen-cadastro" class="screen active">
+  <canvas id="rink-bg"></canvas>
+  <canvas id="snow-cadastro"></canvas>
+  <div class="gelo-glow"></div>
+  <div id="cadastro-content">
+  <div class="game-title">Hockey do Rocky 🏒</div>
+  <div class="game-subtitle">Copa dos Valores 2026</div>
+  <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="" onerror="this.style.display='none'">
+  <div class="input-group">
+    <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
+    <select id="input-pais">
+      <option value="">Escolha seu país 🏳️</option>
+      <option value="Canadá">🍁 Canadá — Rotanorte</option>
+      <option value="Estados Unidos">🇺🇸 Estados Unidos — Supergiro</option>
+      <option value="Japão">🇯🇵 Japão — NIC</option>
+      <option value="Polônia">🇵🇱 Polônia — Professional</option>
+      <option value="Alemanha">🇩🇪 Alemanha — Compras</option>
+      <option value="Argentina">🇦🇷 Argentina — Elonorte</option>
+      <option value="Colômbia">🇨🇴 Colômbia — Depto. Pessoal</option>
+      <option value="Espanha">🇪🇸 Espanha — Finanças</option>
+      <option value="Suécia">🇸🇪 Suécia — Dunorte</option>
+      <option value="Cabo Verde">🇨🇻 Cabo Verde — Trade</option>
+      <option value="França">🇫🇷 França — Fiscal</option>
+      <option value="Holanda">🇳🇱 Holanda — Abastex</option>
+      <option value="Marrocos">🇲🇦 Marrocos — Crédito e Cobrança</option>
+      <option value="México">🇲🇽 México — Metanorte</option>
+      <option value="Coreia do Sul">🇰🇷 Coreia do Sul — Contábil</option>
+      <option value="Equador">🇪🇨 Equador — Infra e Sup</option>
+      <option value="Inglaterra">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra — Tec e Informação</option>
+    </select>
+    <button class="btn-jogar" id="btn-iniciar">JOGAR 🏒</button>
+    <button class="btn-ranking-link" id="btn-ver-ranking">🏆 Ver Ranking</button>
+  </div>
+  </div>
+</div>
+
+<!-- JOGO -->
+<div id="screen-jogo" class="screen">
+  <div id="game-container">
+    <div id="hud">
+      <div class="hud-score" id="hud-player">🏳️ 0</div>
+      <div class="hud-timer" id="hud-timer">60</div>
+      <div class="hud-ai-score" id="hud-ai">0 🍁</div>
+    </div>
+    <button id="btn-pausar">⏸</button>
+    <div id="pause-overlay">
+      <div class="pause-box">
+        <div class="pause-title">⏸ Pausado</div>
+        <button class="btn-jogar" id="btn-continuar" style="max-width:240px;">▶ Continuar</button>
+        <button class="btn-voltar" id="btn-sair-jogo">← Sair</button>
+      </div>
+    </div>
+    <canvas id="canvas"></canvas>
+  </div>
+</div>
+
+<!-- RESULTADO -->
+<div id="screen-resultado" class="screen">
+  <div style="font-size:48px;">🏒</div>
+  <div class="resultado-titulo" id="res-titulo">Fim de jogo!</div>
+  <div class="resultado-placar" id="res-placar">0 x 0</div>
+  <div class="resultado-sub" id="res-sub"></div>
+  <button class="btn-salvar" id="btn-salvar" >💾 Salvar no Ranking</button>
+  <button class="btn-jogar-dnv" id="btn-jogar-dnv">🔄 Jogar de Novo</button>
+  <button class="btn-voltar" id="btn-voltar-res">← Voltar</button>
+</div>
+
+<!-- RANKING -->
+<div id="screen-ranking" class="screen">
+  <div class="ranking-titulo">🏆 Ranking — Hockey do Rocky</div>
+  <div style="font-size:12px;color:#aaa;text-align:center;">Top 3 países diferentes</div>
+  <div id="ranking-lista" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+    <div class="loading">Carregando...</div>
+  </div>
+  <div style="margin-top:16px;font-size:12px;color:#555;">Ranking geral completo</div>
+  <div id="ranking-geral" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:6px;margin-top:4px;max-height:40vh;overflow-y:auto;"></div>
+  <button class="btn-voltar" id="btn-voltar-rank">← Voltar</button>
+</div>
+
+</div>
+
+<script type="module">
+let db = null;
+let fbAddDoc, fbCollection, fbGetDocs, fbQuery, fbOrderBy, fbServerTimestamp;
+
+async function initFirebase() {
+  try {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js");
+    const fs = await import("https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js");
+    const firebaseConfig = {
+      apiKey: "AIzaSyBpIlm5AqH4FkON9rLCxkIk0-UP3sa3ws8",
+      authDomain: "jogo-de-basquete-do-rocky.firebaseapp.com",
+      projectId: "jogo-de-basquete-do-rocky",
+      storageBucket: "jogo-de-basquete-do-rocky.firebasestorage.app",
+      messagingSenderId: "928804481138",
+      appId: "1:928804481138:web:dcde408a36160026247aeb"
+    };
+    const app = initializeApp(firebaseConfig);
+    db = fs.getFirestore(app);
+    fbAddDoc = fs.addDoc; fbCollection = fs.collection; fbGetDocs = fs.getDocs;
+    fbQuery = fs.query; fbOrderBy = fs.orderBy; fbServerTimestamp = fs.serverTimestamp;
+  } catch(e) {
+    console.warn('Firebase indisponível (preview). Funcionará no GitHub.', e);
+  }
+}
+initFirebase();
+
+// ROCKY IMAGE
+const ROCKY_URL = "https://raw.githubusercontent.com/alexpmmark-sudo/jogodebasquetedorocky/main/rocky-hockey.png";
+document.getElementById('rocky-cadastro-img').src = ROCKY_URL;
+
+const rockyImg = new Image();
+rockyImg.crossOrigin = "anonymous";
+rockyImg.src = ROCKY_URL;
+let rockyLoaded = false;
+rockyImg.onload = () => { rockyLoaded = true; };
+
+// DESENHA BANDEIRA REAL DENTRO DE UM RETÂNGULO (clipado em círculo)
+function desenharBandeira(cx, cy, raio, pais) {
+  const bw = raio * 1.7;   // largura bandeira
+  const bh = raio * 1.15;  // altura bandeira
+  const x = cx - bw/2;
+  const y = cy - bh/2;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, raio*0.82, 0, Math.PI*2); ctx.clip();
+
+  const faixaV = (cores) => { // faixas verticais
+    const n = cores.length, fw = bw/n;
+    cores.forEach((c,i)=>{ ctx.fillStyle=c; ctx.fillRect(x+i*fw, y, fw+1, bh); });
+  };
+  const faixaH = (cores) => { // faixas horizontais
+    const n = cores.length, fh = bh/n;
+    cores.forEach((c,i)=>{ ctx.fillStyle=c; ctx.fillRect(x, y+i*fh, bw, fh+1); });
+  };
+
+  switch(pais){
+    case 'Canadá': {
+      ctx.fillStyle='#fff'; ctx.fillRect(x,y,bw,bh);
+      ctx.fillStyle='#d52b1e'; ctx.fillRect(x,y,bw*0.25,bh); ctx.fillRect(x+bw*0.75,y,bw*0.25,bh);
+      ctx.fillStyle='#d52b1e'; ctx.font=`${bh*0.7}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('🍁', cx, cy+bh*0.02);
+      break; }
+    case 'Estados Unidos': {
+      const fh=bh/7;
+      for(let i=0;i<7;i++){ ctx.fillStyle=i%2===0?'#b22234':'#fff'; ctx.fillRect(x,y+i*fh,bw,fh+1); }
+      ctx.fillStyle='#3c3b6e'; ctx.fillRect(x,y,bw*0.45,bh*0.55);
+      break; }
+    case 'Japão': {
+      ctx.fillStyle='#fff'; ctx.fillRect(x,y,bw,bh);
+      ctx.fillStyle='#bc002d'; ctx.beginPath(); ctx.arc(cx,cy,bh*0.32,0,Math.PI*2); ctx.fill();
+      break; }
+    case 'Polônia': faixaH(['#fff','#dc143c']); break;
+    case 'Alemanha': faixaH(['#000','#dd0000','#ffce00']); break;
+    case 'Argentina': {
+      faixaH(['#75aadb','#fff','#75aadb']);
+      ctx.fillStyle='#f6b40e'; ctx.beginPath(); ctx.arc(cx,cy,bh*0.13,0,Math.PI*2); ctx.fill();
+      break; }
+    case 'Colômbia': {
+      ctx.fillStyle='#fcd116'; ctx.fillRect(x,y,bw,bh*0.5);
+      ctx.fillStyle='#003893'; ctx.fillRect(x,y+bh*0.5,bw,bh*0.25);
+      ctx.fillStyle='#ce1126'; ctx.fillRect(x,y+bh*0.75,bw,bh*0.25);
+      break; }
+    case 'Espanha': {
+      ctx.fillStyle='#aa151b'; ctx.fillRect(x,y,bw,bh*0.25);
+      ctx.fillStyle='#f1bf00'; ctx.fillRect(x,y+bh*0.25,bw,bh*0.5);
+      ctx.fillStyle='#aa151b'; ctx.fillRect(x,y+bh*0.75,bw,bh*0.25);
+      break; }
+    case 'Suécia': {
+      ctx.fillStyle='#006aa7'; ctx.fillRect(x,y,bw,bh);
+      ctx.fillStyle='#fecc00'; ctx.fillRect(x+bw*0.3,y,bw*0.13,bh); ctx.fillRect(x,y+bh*0.4,bw,bh*0.2);
+      break; }
+    case 'Cabo Verde': {
+      ctx.fillStyle='#003893'; ctx.fillRect(x,y,bw,bh);
+      ctx.fillStyle='#fff'; ctx.fillRect(x,y+bh*0.5,bw,bh*0.17);
+      ctx.fillStyle='#cf2027'; ctx.fillRect(x,y+bh*0.575,bw,bh*0.06);
+      ctx.fillStyle='#f7d116'; ctx.font=`${bh*0.3}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('★', cx-bw*0.1, cy+bh*0.05);
+      break; }
+    case 'França': faixaV(['#002395','#fff','#ed2939']); break;
+    case 'Holanda': faixaH(['#ae1c28','#fff','#21468b']); break;
+    case 'Marrocos': {
+      ctx.fillStyle='#c1272d'; ctx.fillRect(x,y,bw,bh);
+      ctx.strokeStyle='#006233'; ctx.lineWidth=bh*0.06; ctx.font=`${bh*0.5}px serif`;
+      ctx.fillStyle='#006233'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('★', cx, cy+bh*0.05);
+      break; }
+    case 'México': {
+      faixaV(['#006847','#fff','#ce1126']);
+      ctx.fillStyle='#8a5a2b'; ctx.beginPath(); ctx.arc(cx,cy,bh*0.12,0,Math.PI*2); ctx.fill();
+      break; }
+    case 'Coreia do Sul': {
+      ctx.fillStyle='#fff'; ctx.fillRect(x,y,bw,bh);
+      ctx.fillStyle='#cd2e3a'; ctx.beginPath(); ctx.arc(cx,cy,bh*0.22,Math.PI,0); ctx.fill();
+      ctx.fillStyle='#0047a0'; ctx.beginPath(); ctx.arc(cx,cy,bh*0.22,0,Math.PI); ctx.fill();
+      break; }
+    case 'Equador': {
+      ctx.fillStyle='#ffdd00'; ctx.fillRect(x,y,bw,bh*0.5);
+      ctx.fillStyle='#034ea2'; ctx.fillRect(x,y+bh*0.5,bw,bh*0.25);
+      ctx.fillStyle='#ed1c24'; ctx.fillRect(x,y+bh*0.75,bw,bh*0.25);
+      break; }
+    case 'Inglaterra': {
+      ctx.fillStyle='#fff'; ctx.fillRect(x,y,bw,bh);
+      ctx.fillStyle='#ce1124'; ctx.fillRect(cx-bw*0.08,y,bw*0.16,bh); ctx.fillRect(x,cy-bh*0.1,bw,bh*0.2);
+      break; }
+    default:
+      ctx.fillStyle='#ccc'; ctx.fillRect(x,y,bw,bh);
+  }
+  ctx.restore();
+}
+
+// ESTADO DO JOGO
+let playerScore = 0, aiScore = 0;
+let timeLeft = 60;
+let timerInterval = null;
+let animFrame = null;
+let jogoAtivo = false;
+let pausado = false;
+let nomeJogador = '', paisJogador = '';
+let bandeiraJogador = '';
+const SIGLAS = {
+  "Canadá":"CAN","Estados Unidos":"USA","Japão":"JPN","Polônia":"POL",
+  "Alemanha":"ALE","Argentina":"ARG","Colômbia":"COL","Espanha":"ESP",
+  "Suécia":"SUE","Cabo Verde":"CPV","França":"FRA","Holanda":"HOL",
+  "Marrocos":"MAR","México":"MEX","Coreia do Sul":"COR","Equador":"EQU","Inglaterra":"ING"
+};
+let jaSlvou = false;
+
+// CANVAS SETUP
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resizeCanvas() {
+  const container = document.getElementById('game-container');
+  W = container.clientWidth;
+  H = container.clientHeight;
+  canvas.width = W;
+  canvas.height = H;
+}
+
+// FÍSICA
+let puck = {x:0, y:0, vx:0, vy:0, r:18};
+let playerPaddle = {x:0, y:0, r:28};
+let aiPaddle = {x:0, y:0, r:28};
+let snowflakes = [];
+let iceShines = [];
+let skateMarks = [];
+
+const GOAL_W = 0.5;
+const GOAL_H = 18;
+const AI_SPEED = 1.7;
+const FRICTION = 0.985;
+const MAX_SPEED = 18;
+
+function initGame() {
+  resizeCanvas();
+  puck = {x: W/2, y: H/2, vx: (Math.random()-0.5)*6, vy: 4, r: W*0.055};
+  playerPaddle = {x: W/2, y: H*0.8, r: W*0.07};
+  aiPaddle = {x: W/2, y: H*0.18, r: W*0.07};
+
+  // Neve
+  snowflakes = [];
+  for (let i = 0; i < 45; i++) {
+    snowflakes.push({
+      x: Math.random()*W,
+      y: Math.random()*H,
+      r: 1 + Math.random()*2.5,
+      speed: 0.3 + Math.random()*0.8,
+      opacity: 0.3 + Math.random()*0.5,
+      sway: Math.random()*Math.PI*2
+    });
+  }
+  // Brilhos de gelo
+  iceShines = [];
+  for (let i = 0; i < 6; i++) {
+    iceShines.push({
+      x: Math.random()*W,
+      y: Math.random()*H,
+      r: 40 + Math.random()*80,
+      a: Math.random()*Math.PI
+    });
+  }
+  // Riscos de patins
+  skateMarks = [];
+  for (let i = 0; i < 12; i++) {
+    const x1 = Math.random()*W, y1 = Math.random()*H;
+    skateMarks.push({
+      x1, y1,
+      cx: x1 + (Math.random()-0.5)*100,
+      cy: y1 + (Math.random()-0.5)*100,
+      x2: x1 + (Math.random()-0.5)*150,
+      y2: y1 + (Math.random()-0.5)*150
+    });
+  }
+}
+
+// INPUT
+let touchActive = false;
+let lastTouchX = 0, lastTouchY = 0;
+let prevPlayerX = 0, prevPlayerY = 0;
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (!jogoAtivo) return;
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  lastTouchX = (t.clientX - rect.left) * scaleX;
+  lastTouchY = (t.clientY - rect.top) * scaleY;
+  touchActive = true;
+}, {passive: false});
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!jogoAtivo) return;
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  lastTouchX = (t.clientX - rect.left) * scaleX;
+  lastTouchY = (t.clientY - rect.top) * scaleY;
+}, {passive: false});
+
+canvas.addEventListener('touchend', e => { touchActive = false; }, {passive: false});
+
+canvas.addEventListener('mousemove', e => {
+  if (!jogoAtivo) return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  lastTouchX = (e.clientX - rect.left) * scaleX;
+  lastTouchY = (e.clientY - rect.top) * scaleY;
+  touchActive = true;
+});
+
+function updatePlayerPaddle() {
+  if (!touchActive) return;
+  prevPlayerX = playerPaddle.x;
+  prevPlayerY = playerPaddle.y;
+  const targetX = Math.max(playerPaddle.r, Math.min(W - playerPaddle.r, lastTouchX));
+  const targetY = Math.max(H/2 + 20, Math.min(H - playerPaddle.r - GOAL_H, lastTouchY));
+  playerPaddle.x += (targetX - playerPaddle.x) * 0.4;
+  playerPaddle.y += (targetY - playerPaddle.y) * 0.4;
+}
+
+function updateAI() {
+  let targetX, targetY;
+  // Só reage quando o puck está vindo pro campo dela E perto
+  if (puck.y < H*0.45 && puck.vy < 0) {
+    targetX = puck.x;
+    targetY = Math.min(puck.y - puck.r - aiPaddle.r*0.3, H*0.35);
+  } else {
+    // Volta pro centro do gol, sem perseguir até os cantos
+    targetX = W/2 + (puck.x - W/2) * 0.25;
+    targetY = H * 0.12;
+  }
+  // Limita o quanto a IA persegue lateralmente (deixa brechas nos cantos)
+  const goalLeft = W/2 - W*GOAL_W/2;
+  const goalRight = W/2 + W*GOAL_W/2;
+  targetX = Math.max(goalLeft - 10, Math.min(goalRight + 10, targetX));
+
+  const dx = targetX - aiPaddle.x;
+  const dy = targetY - aiPaddle.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist > 2) {
+    aiPaddle.x += (dx/dist) * Math.min(AI_SPEED, dist);
+    aiPaddle.y += (dy/dist) * Math.min(AI_SPEED * 0.5, Math.abs(dy));
+  }
+  aiPaddle.x = Math.max(aiPaddle.r, Math.min(W - aiPaddle.r, aiPaddle.x));
+  aiPaddle.y = Math.max(GOAL_H + aiPaddle.r, Math.min(H/2 - 20, aiPaddle.y));
+}
+
+function collidePaddlePuck(paddle) {
+  const dx = puck.x - paddle.x;
+  const dy = puck.y - paddle.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  const minDist = puck.r + paddle.r;
+  if (dist < minDist && dist > 0) {
+    const nx = dx/dist, ny = dy/dist;
+    const overlap = minDist - dist;
+    puck.x += nx * overlap;
+    puck.y += ny * overlap;
+    const relVx = puck.vx - (paddle === playerPaddle ? (playerPaddle.x - prevPlayerX) * 2 : 0);
+    const relVy = puck.vy - (paddle === playerPaddle ? (playerPaddle.y - prevPlayerY) * 2 : 0);
+    const dot = relVx * nx + relVy * ny;
+    puck.vx -= 2 * dot * nx;
+    puck.vy -= 2 * dot * ny;
+    const speed = Math.sqrt(puck.vx*puck.vx + puck.vy*puck.vy);
+    if (speed > MAX_SPEED) { puck.vx = puck.vx/speed*MAX_SPEED; puck.vy = puck.vy/speed*MAX_SPEED; }
+    if (speed < 5) { puck.vx = nx*6; puck.vy = ny*6; }
+    return true;
+  }
+  return false;
+}
+
+function checkGoal() {
+  const goalLeft = W/2 - W*GOAL_W/2;
+  const goalRight = W/2 + W*GOAL_W/2;
+
+  // GOL DO JOGADOR (puck vai pra cima)
+  if (puck.y - puck.r < 0) {
+    if (puck.x > goalLeft && puck.x < goalRight) {
+      playerScore++;
+      document.getElementById('hud-player').textContent = bandeiraJogador + ' ' + playerScore;
+      resetPuck(1);
+      return true;
+    }
+  }
+  // GOL DA IA (puck vai pra baixo)
+  if (puck.y + puck.r > H) {
+    if (puck.x > goalLeft && puck.x < goalRight) {
+      aiScore++;
+      document.getElementById('hud-ai').textContent = aiScore + ' 🍁';
+      resetPuck(-1);
+      return true;
+    }
+  }
+  return false;
+}
+
+function resetPuck(dir) {
+  puck.x = W/2;
+  puck.y = H/2;
+  puck.vx = (Math.random()-0.5)*4;
+  puck.vy = dir * 5;
+}
+
+function updatePuck() {
+  puck.vx *= FRICTION;
+  puck.vy *= FRICTION;
+
+  // Mínimo de velocidade
+  const speed = Math.sqrt(puck.vx*puck.vx + puck.vy*puck.vy);
+  if (speed < 3 && speed > 0) { puck.vx = puck.vx/speed*3; puck.vy = puck.vy/speed*3; }
+
+  puck.x += puck.vx;
+  puck.y += puck.vy;
+
+  // Paredes laterais
+  if (puck.x - puck.r < 0) { puck.x = puck.r; puck.vx = Math.abs(puck.vx); }
+  if (puck.x + puck.r > W) { puck.x = W - puck.r; puck.vx = -Math.abs(puck.vx); }
+
+  // Paredes (fora do gol)
+  const goalLeft = W/2 - W*GOAL_W/2;
+  const goalRight = W/2 + W*GOAL_W/2;
+
+  if (puck.y - puck.r < GOAL_H) {
+    if (puck.x < goalLeft || puck.x > goalRight) {
+      puck.y = GOAL_H + puck.r;
+      puck.vy = Math.abs(puck.vy);
+    }
+  }
+  if (puck.y + puck.r > H - GOAL_H) {
+    if (puck.x < goalLeft || puck.x > goalRight) {
+      puck.y = H - GOAL_H - puck.r;
+      puck.vy = -Math.abs(puck.vy);
+    }
+  }
+}
+
+// DESENHO
+function drawRink() {
+  // Fundo gelo - gradiente azul gelado
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#dff2fb');
+  grad.addColorStop(0.5, '#eaf7fd');
+  grad.addColorStop(1, '#dff2fb');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Brilho de gelo (manchas claras translúcidas)
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  for (const s of iceShines) {
+    const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+    g.addColorStop(0, 'rgba(255,255,255,0.7)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r, s.r*0.4, s.a, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  // Riscos de patins (linhas finas curvas)
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.strokeStyle = '#8fb8cc';
+  ctx.lineWidth = 1;
+  for (const sc of skateMarks) {
+    ctx.beginPath();
+    ctx.moveTo(sc.x1, sc.y1);
+    ctx.quadraticCurveTo(sc.cx, sc.cy, sc.x2, sc.y2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Círculo central vermelho
+  ctx.strokeStyle = 'rgba(210,40,30,0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(W/2, H/2, W*0.15, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = 'rgba(210,40,30,0.6)';
+  ctx.beginPath(); ctx.arc(W/2, H/2, 5, 0, Math.PI*2); ctx.fill();
+
+  // Linha central vermelha
+  ctx.strokeStyle = 'rgba(210,40,30,0.7)';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+
+  // Linhas azuis
+  ctx.strokeStyle = 'rgba(30,90,180,0.6)';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0, H*0.33); ctx.lineTo(W, H*0.33); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, H*0.67); ctx.lineTo(W, H*0.67); ctx.stroke();
+
+  // Círculos de faceoff
+  ctx.strokeStyle = 'rgba(210,40,30,0.4)';
+  ctx.lineWidth = 1.5;
+  for (const fy of [H*0.2, H*0.8]) {
+    for (const fx of [W*0.25, W*0.75]) {
+      ctx.beginPath(); ctx.arc(fx, fy, W*0.08, 0, Math.PI*2); ctx.stroke();
+    }
+  }
+
+  // Bordas da pista
+  ctx.strokeStyle = '#cc1100';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(3, 3, W-6, H-6);
+
+  // GOLS
+  const goalLeft = W/2 - W*GOAL_W/2;
+  const goalRight = W/2 + W*GOAL_W/2;
+  ctx.strokeStyle = '#4af';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(goalLeft, 0, W*GOAL_W, GOAL_H);
+  ctx.fillStyle = 'rgba(68,170,255,0.2)';
+  ctx.fillRect(goalLeft, 0, W*GOAL_W, GOAL_H);
+  ctx.strokeStyle = '#F0331E';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(goalLeft, H-GOAL_H, W*GOAL_W, GOAL_H);
+  ctx.fillStyle = 'rgba(240,51,30,0.2)';
+  ctx.fillRect(goalLeft, H-GOAL_H, W*GOAL_W, GOAL_H);
+}
+
+function drawSnow() {
+  ctx.save();
+  for (const f of snowflakes) {
+    ctx.globalAlpha = f.opacity;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+    ctx.fill();
+    // Atualiza posição
+    f.y += f.speed;
+    f.x += Math.sin(f.y * 0.01 + f.sway) * 0.4;
+    if (f.y > H) { f.y = -5; f.x = Math.random()*W; }
+  }
+  ctx.restore();
+}
+
+function drawPuck() {
+  const r = puck.r;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 3;
+
+  // Lateral do disco (corpo cilíndrico)
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath();
+  ctx.ellipse(puck.x, puck.y + r*0.18, r, r*0.55, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Conecta topo e base
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(puck.x - r, puck.y - r*0.18, r*2, r*0.36);
+
+  // Topo do disco
+  ctx.fillStyle = '#2a2a2a';
+  ctx.beginPath();
+  ctx.ellipse(puck.x, puck.y - r*0.18, r, r*0.55, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Anel branco
+  ctx.strokeStyle = '#f5f5f5';
+  ctx.lineWidth = r*0.12;
+  ctx.beginPath();
+  ctx.ellipse(puck.x, puck.y - r*0.18, r*0.62, r*0.34, 0, 0, Math.PI*2);
+  ctx.stroke();
+
+  // Centro escuro
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath();
+  ctx.ellipse(puck.x, puck.y - r*0.18, r*0.5, r*0.27, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawPlayerPaddle() {
+  const p = playerPaddle;
+  // Círculo branco de fundo
+  ctx.save();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  // Bandeira real desenhada
+  desenharBandeira(p.x, p.y, p.r, paisJogador);
+  // Aro vermelho
+  ctx.save();
+  ctx.strokeStyle = '#F0331E';
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+
+function drawRockyPaddle() {
+  const p = aiPaddle;
+  if (rockyLoaded) {
+    const size = p.r * 3.2;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 10;
+    ctx.drawImage(rockyImg, p.x - size/2, p.y - size/2, size, size);
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.shadowColor = '#4af';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#4af';
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function gameLoop() {
+  if (!jogoAtivo) return;
+  if (pausado) { animFrame = requestAnimationFrame(gameLoop); return; }
+  prevPlayerX = playerPaddle.x;
+  prevPlayerY = playerPaddle.y;
+  updatePlayerPaddle();
+  updateAI();
+  collidePaddlePuck(playerPaddle);
+  collidePaddlePuck(aiPaddle);
+  updatePuck();
+  checkGoal();
+
+  ctx.clearRect(0, 0, W, H);
+  drawRink();
+  drawRockyPaddle();
+  drawPlayerPaddle();
+  drawPuck();
+  drawSnow();
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// CONTROLES
+function iniciarJogo() {
+  const nome = document.getElementById('input-nome').value.trim();
+  const pais = document.getElementById('input-pais').value;
+  if (!nome) { alert('Digite seu nome!'); return; }
+  if (!pais) { alert('Escolha seu país!'); return; }
+  nomeJogador = nome;
+  paisJogador = pais;
+  bandeiraJogador = SIGLAS[pais] || pais.substring(0,3).toUpperCase();
+  playerScore = 0; aiScore = 0; timeLeft = 60; jaSlvou = false; pausado = false;
+  showScreen('screen-jogo');
+  setTimeout(() => {
+    initGame();
+    jogoAtivo = true;
+    gameLoop();
+    timerInterval = setInterval(() => {
+      if (pausado) return;
+      timeLeft--;
+      document.getElementById('hud-timer').textContent = timeLeft;
+      if (timeLeft <= 0) terminarJogo();
+    }, 1000);
+  }, 100);
+};
+
+function terminarJogo() {
+  jogoAtivo = false;
+  clearInterval(timerInterval);
+  cancelAnimationFrame(animFrame);
+  const venceu = playerScore > aiScore;
+  const empate = playerScore === aiScore;
+  document.getElementById('res-titulo').textContent = venceu ? '🎉 Você venceu o Rocky!' : empate ? '🤝 Empate com o Rocky!' : '🍁 O Rocky venceu!';
+  document.getElementById('res-placar').textContent = `${playerScore} x ${aiScore}`;
+  document.getElementById('res-sub').textContent = `${nomeJogador} · ${paisJogador}`;
+  document.getElementById('btn-salvar').style.display = 'block';
+  jaSlvou = false;
+  showScreen('screen-resultado');
+}
+
+async function salvarResultado() {
+  if (jaSlvou) return;
+  if (!db) { document.getElementById('btn-salvar').textContent = '⚠️ Salva só no GitHub'; return; }
+  jaSlvou = true;
+  document.getElementById('btn-salvar').textContent = 'Salvando...';
+  const agora = new Date().toLocaleString('pt-BR', {timeZone:'America/Manaus'});
+  try {
+    await fbAddDoc(fbCollection(db, 'hockey_ranking'), {
+      name: nomeJogador,
+      country: paisJogador,
+      playerGoals: playerScore,
+      aiGoals: aiScore,
+      score: playerScore,
+      finishedLocal: agora,
+      timestamp: fbServerTimestamp()
+    });
+    document.getElementById('btn-salvar').textContent = '✅ Salvo!';
+  } catch(e) {
+    document.getElementById('btn-salvar').textContent = '❌ Erro ao salvar';
+    jaSlvou = false;
+  }
+};
+
+function jogarDenovo() {
+  playerScore = 0; aiScore = 0; timeLeft = 60; jaSlvou = false; pausado = false;
+  document.getElementById('hud-player').textContent = bandeiraJogador + ' 0';
+  document.getElementById('hud-ai').textContent = '0 🍁';
+  document.getElementById('hud-timer').textContent = '60';
+  document.getElementById('btn-salvar').textContent = '💾 Salvar no Ranking';
+  document.getElementById('btn-salvar').style.display = 'block';
+  showScreen('screen-jogo');
+  setTimeout(() => {
+    initGame();
+    jogoAtivo = true;
+    gameLoop();
+    timerInterval = setInterval(() => {
+      if (pausado) return;
+      timeLeft--;
+      document.getElementById('hud-timer').textContent = timeLeft;
+      if (timeLeft <= 0) terminarJogo();
+    }, 1000);
+  }, 100);
+};
+
+function voltarCadastro() {
+  jogoAtivo = false;
+  clearInterval(timerInterval);
+  cancelAnimationFrame(animFrame);
+  showScreen('screen-cadastro');
+};
+
+async function verRanking() {
+  showScreen('screen-ranking');
+  const lista = document.getElementById('ranking-lista');
+  const geral = document.getElementById('ranking-geral');
+  lista.innerHTML = '<div class="loading">Carregando...</div>';
+  geral.innerHTML = '';
+  if (!db) { lista.innerHTML = '<div class="loading">Ranking disponível só no GitHub.</div>'; return; }
+  try {
+    const q = fbQuery(fbCollection(db, 'hockey_ranking'), fbOrderBy('score','desc'));
+    const snap = await fbGetDocs(q);
+    const todos = snap.docs.map(d => d.data());
+
+    // Top 3 países diferentes
+    const top3 = [];
+    const paisesUsados = new Set();
+    for (const r of todos) {
+      if (!r.country) continue;
+      if (!paisesUsados.has(r.country)) {
+        paisesUsados.add(r.country);
+        top3.push(r);
+        if (top3.length >= 3) break;
+      }
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    const classes = ['top1','top2','top3'];
+    lista.innerHTML = top3.length ? top3.map((r,i) => `
+      <div class="ranking-item ${classes[i]}">
+        <span class="rank-pos">${medals[i]}</span>
+        <div class="rank-info">
+          <div class="rank-nome">${r.name||'—'}</div>
+          <div class="rank-pais">${r.country||'—'}</div>
+        </div>
+        <span class="rank-pts">${r.score||0} gols</span>
+      </div>`).join('') : '<div class="loading">Nenhum resultado ainda!</div>';
+
+    // Ranking geral
+    geral.innerHTML = todos.slice(0,30).map((r,i) => `
+      <div class="ranking-item" style="padding:7px 14px;">
+        <span class="rank-pos" style="font-size:14px;">${i+1}</span>
+        <div class="rank-info">
+          <div class="rank-nome" style="font-size:13px;">${r.name||'—'}</div>
+          <div class="rank-pais">${r.country||'—'}</div>
+        </div>
+        <span class="rank-pts" style="font-size:15px;">${r.score||0}</span>
+      </div>`).join('');
+  } catch(e) {
+    lista.innerHTML = '<div class="loading">Erro ao carregar.</div>';
+  }
+};
+
+// QUADRA DE FUNDO NO CADASTRO
+(function rinkBg(){
+  const rc = document.getElementById('rink-bg');
+  if (!rc) return;
+  const rctx = rc.getContext('2d');
+  function draw(){
+    rc.width = rc.offsetWidth;
+    rc.height = rc.offsetHeight;
+    const w = rc.width, h = rc.height;
+    rctx.clearRect(0,0,w,h);
+    // Linhas azuis
+    rctx.strokeStyle = 'rgba(40,100,190,0.25)';
+    rctx.lineWidth = 6;
+    rctx.beginPath(); rctx.moveTo(0,h*0.28); rctx.lineTo(w,h*0.28); rctx.stroke();
+    rctx.beginPath(); rctx.moveTo(0,h*0.72); rctx.lineTo(w,h*0.72); rctx.stroke();
+    // Linha central vermelha
+    rctx.strokeStyle = 'rgba(210,40,30,0.25)';
+    rctx.lineWidth = 5;
+    rctx.beginPath(); rctx.moveTo(0,h*0.5); rctx.lineTo(w,h*0.5); rctx.stroke();
+    // Círculo central
+    rctx.strokeStyle = 'rgba(210,40,30,0.2)';
+    rctx.lineWidth = 3;
+    rctx.beginPath(); rctx.arc(w/2,h*0.5,w*0.22,0,Math.PI*2); rctx.stroke();
+    rctx.fillStyle = 'rgba(210,40,30,0.2)';
+    rctx.beginPath(); rctx.arc(w/2,h*0.5,6,0,Math.PI*2); rctx.fill();
+    // Círculos de faceoff
+    rctx.strokeStyle = 'rgba(210,40,30,0.15)';
+    rctx.lineWidth = 2;
+    for (const fy of [h*0.16, h*0.84]) {
+      for (const fx of [w*0.25, w*0.75]) {
+        rctx.beginPath(); rctx.arc(fx,fy,w*0.1,0,Math.PI*2); rctx.stroke();
+      }
+    }
+  }
+  setTimeout(draw, 200);
+  window.addEventListener('resize', draw);
+})();
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// NEVE NA TELA DE CADASTRO
+(function snowCadastro(){
+  const sc = document.getElementById('snow-cadastro');
+  if (!sc) return;
+  const sctx = sc.getContext('2d');
+  let flakes = [];
+  function resize(){
+    sc.width = sc.offsetWidth;
+    sc.height = sc.offsetHeight;
+  }
+  function init(){
+    resize();
+    flakes = [];
+    for(let i=0;i<60;i++){
+      flakes.push({
+        x: Math.random()*sc.width,
+        y: Math.random()*sc.height,
+        r: 1+Math.random()*3,
+        speed: 0.3+Math.random()*1,
+        opacity: 0.3+Math.random()*0.6,
+        sway: Math.random()*Math.PI*2
+      });
+    }
+  }
+  function loop(){
+    if (!document.getElementById('screen-cadastro').classList.contains('active')) {
+      requestAnimationFrame(loop);
+      return;
+    }
+    sctx.clearRect(0,0,sc.width,sc.height);
+    for(const f of flakes){
+      sctx.globalAlpha = f.opacity;
+      sctx.fillStyle = '#fff';
+      sctx.shadowColor = 'rgba(150,190,220,0.8)';
+      sctx.shadowBlur = 3;
+      sctx.beginPath();
+      sctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+      sctx.fill();
+      f.y += f.speed;
+      f.x += Math.sin(f.y*0.01+f.sway)*0.5;
+      if(f.y>sc.height){f.y=-5;f.x=Math.random()*sc.width;}
+    }
+    requestAnimationFrame(loop);
+  }
+  setTimeout(()=>{ init(); loop(); }, 200);
+  window.addEventListener('resize', init);
+})();
+
+window.addEventListener('resize', () => { if (jogoAtivo) resizeCanvas(); });
+
+document.getElementById('btn-iniciar').addEventListener('click', iniciarJogo);
+document.getElementById('btn-ver-ranking').addEventListener('click', verRanking);
+document.getElementById('btn-salvar').addEventListener('click', salvarResultado);
+document.getElementById('btn-jogar-dnv').addEventListener('click', jogarDenovo);
+document.getElementById('btn-voltar-res').addEventListener('click', voltarCadastro);
+document.getElementById('btn-voltar-rank').addEventListener('click', voltarCadastro);
+
+document.getElementById('btn-pausar').addEventListener('click', () => {
+  pausado = true;
+  document.getElementById('pause-overlay').classList.add('show');
+});
+document.getElementById('btn-continuar').addEventListener('click', () => {
+  pausado = false;
+  document.getElementById('pause-overlay').classList.remove('show');
+});
+document.getElementById('btn-sair-jogo').addEventListener('click', () => {
+  pausado = false;
+  document.getElementById('pause-overlay').classList.remove('show');
+  voltarCadastro();
+});
+</script>
+</body>
+</html>
