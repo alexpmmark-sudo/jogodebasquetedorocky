@@ -39,6 +39,17 @@ body{background:#3d2410;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 #pause-overlay.show{display:flex;}
 .pause-box{display:flex;flex-direction:column;align-items:center;gap:14px;}
 .pause-title{font-size:28px;font-weight:900;color:#fff;}
+#intro-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.82);z-index:40;align-items:center;justify-content:center;padding:20px;}
+#intro-overlay.show{display:flex;}
+.intro-box{background:linear-gradient(180deg,#8a4d15,#5a2f0c);border:3px solid #d4691e;border-radius:18px;padding:22px 20px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px;color:#fff;}
+.intro-titulo{font-size:22px;font-weight:900;text-align:center;color:#ffc53d;}
+.intro-item{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;}
+.intro-item .ic{font-size:20px;flex-shrink:0;}
+#countdown-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:40;align-items:center;justify-content:center;}
+#countdown-overlay.show{display:flex;}
+#countdown-num{font-size:110px;font-weight:900;color:#ffc53d;text-shadow:0 4px 18px rgba(0,0,0,0.6);}
+#countdown-num.pop{animation:cdpop 0.8s ease-out;}
+@keyframes cdpop{0%{transform:scale(1.8);opacity:0;}30%{transform:scale(1);opacity:1;}100%{transform:scale(0.95);opacity:1;}}
 
 /* RESULTADO */
 #screen-resultado{background:linear-gradient(180deg,#c8842f,#8a4d15);min-height:100vh;justify-content:center;gap:14px;padding:20px;}
@@ -105,7 +116,7 @@ body{background:#3d2410;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <div id="game-container">
     <div id="hud">
       <div class="hud-score" id="hud-score">0</div>
-      <div class="hud-timer" id="hud-timer">120</div>
+      <div class="hud-timer" id="hud-timer">90</div>
       <div class="hud-combo" id="hud-combo"></div>
     </div>
     <canvas id="canvas"></canvas>
@@ -116,6 +127,20 @@ body{background:#3d2410;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
         <button class="btn-jogar" id="btn-continuar" style="max-width:240px;">▶ Continuar</button>
         <button class="btn-voltar" id="btn-sair-jogo">← Sair</button>
       </div>
+    </div>
+    <div id="intro-overlay">
+      <div class="intro-box">
+        <div class="intro-titulo">🥞 Como Jogar</div>
+        <div class="intro-item"><span class="ic">👆</span><span>Toque na tela pra derramar o xarope quando a panqueca passar embaixo da garrafa.</span></div>
+        <div class="intro-item"><span class="ic">🎯</span><span>Quanto mais no centro, mais pontos: <b>PERFEITO +10</b>, BOM +5, QUASE +2.</span></div>
+        <div class="intro-item"><span class="ic">🔥</span><span>3 acertos bons seguidos = combo <b>x2</b>!</span></div>
+        <div class="intro-item"><span class="ic">⭐</span><span>Panqueca dourada vale <b>dobro</b>. Errar zera o combo.</span></div>
+        <div class="intro-item"><span class="ic">⏱️</span><span>Você tem <b>1 minuto e meio</b>. Cubra o máximo de panquecas!</span></div>
+        <button class="btn-jogar" id="btn-entendi" style="max-width:100%;">ENTENDI, BORA! 🍁</button>
+      </div>
+    </div>
+    <div id="countdown-overlay">
+      <div id="countdown-num">3</div>
     </div>
   </div>
 </div>
@@ -178,7 +203,7 @@ let W, H;
 function resizeCanvas() { W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = W; canvas.height = H; }
 
 // ESTADO
-let score = 0, timeLeft = 120, timerInterval = null, animFrame = null;
+let score = 0, timeLeft = 90, timerInterval = null, animFrame = null;
 let jogoAtivo = false, pausado = false, jaSlvou = false;
 let nomeJogador = '', paisJogador = '';
 let combo = 0, comboTimer = 0;
@@ -197,7 +222,7 @@ let dispenserX, dispenserY, bicoY, zonaY;
 
 function initGame() {
   resizeCanvas();
-  score = 0; timeLeft = 120; combo = 0; comboTimer = 0;
+  score = 0; timeLeft = 90; combo = 0; comboTimer = 0;
   perfeitas = 0; boas = 0; ruins = 0; erros = 0;
   panquecas = []; splashes = []; popups = []; jatos = [];
   esteiraSpeed = Math.max(2.2, W * 0.006); // ritmo normal, sem lesma
@@ -457,7 +482,7 @@ function gameLoop() {
   if (pausado) { animFrame = requestAnimationFrame(gameLoop); return; }
 
   // velocidade sobe suave com o tempo (fácil no início)
-  const prog = 1 - (timeLeft/120);
+  const prog = 1 - (timeLeft/90);
   const spd = esteiraSpeed * (1 + prog*0.9);
 
   spawnTimer--;
@@ -498,17 +523,57 @@ function startTimer() {
   }, 1000);
 }
 
+function prepararJogo() {
+  jaSlvou = false; pausado = false; jogoAtivo = false;
+  clearInterval(timerInterval); cancelAnimationFrame(animFrame);
+  document.getElementById('hud-score').textContent = '0';
+  document.getElementById('hud-timer').textContent = '90';
+  document.getElementById('hud-combo').textContent = '';
+  showScreen('screen-jogo');
+  setTimeout(() => {
+    initGame();
+    // desenha a cena parada de fundo
+    ctx.clearRect(0,0,W,H);
+    drawMesa();
+    drawDispenser();
+  }, 100);
+}
+
+function contagemRegressiva() {
+  const ov = document.getElementById('countdown-overlay');
+  const num = document.getElementById('countdown-num');
+  ov.classList.add('show');
+  const seq = ['3','2','1','JÁ!'];
+  let i = 0;
+  function mostra() {
+    num.textContent = seq[i];
+    num.style.fontSize = seq[i] === 'JÁ!' ? '80px' : '110px';
+    num.classList.remove('pop');
+    void num.offsetWidth; // reinicia animação
+    num.classList.add('pop');
+    i++;
+    if (i < seq.length) {
+      setTimeout(mostra, 800);
+    } else {
+      setTimeout(() => {
+        ov.classList.remove('show');
+        jogoAtivo = true;
+        gameLoop();
+        startTimer();
+      }, 600);
+    }
+  }
+  mostra();
+}
+
 function iniciarJogo() {
   const nome = document.getElementById('input-nome').value.trim();
   const pais = document.getElementById('input-pais').value;
   if (!nome) { alert('Digite seu nome!'); return; }
   if (!pais) { alert('Escolha seu país!'); return; }
-  nomeJogador = nome; paisJogador = pais; jaSlvou = false; pausado = false;
-  document.getElementById('hud-score').textContent = '0';
-  document.getElementById('hud-timer').textContent = '120';
-  document.getElementById('hud-combo').textContent = '';
-  showScreen('screen-jogo');
-  setTimeout(() => { initGame(); jogoAtivo = true; gameLoop(); startTimer(); }, 100);
+  nomeJogador = nome; paisJogador = pais;
+  prepararJogo();
+  document.getElementById('intro-overlay').classList.add('show');
 }
 
 function terminarJogo() {
@@ -545,18 +610,16 @@ async function salvarResultado() {
 
 function jogarDenovo() { iniciarJogoDireto(); }
 function iniciarJogoDireto() {
-  jaSlvou = false; pausado = false;
-  document.getElementById('hud-score').textContent = '0';
-  document.getElementById('hud-timer').textContent = '120';
-  document.getElementById('hud-combo').textContent = '';
-  showScreen('screen-jogo');
-  setTimeout(() => { initGame(); jogoAtivo = true; gameLoop(); startTimer(); }, 100);
+  prepararJogo();
+  setTimeout(contagemRegressiva, 150);
 }
 
 function voltarCadastro() {
   jogoAtivo = false; pausado = false;
   clearInterval(timerInterval); cancelAnimationFrame(animFrame);
   document.getElementById('pause-overlay').classList.remove('show');
+  document.getElementById('intro-overlay').classList.remove('show');
+  document.getElementById('countdown-overlay').classList.remove('show');
   showScreen('screen-cadastro');
 }
 
@@ -607,6 +670,10 @@ function showScreen(id) {
 window.addEventListener('resize', () => { if (jogoAtivo) resizeCanvas(); });
 
 document.getElementById('btn-iniciar').addEventListener('click', iniciarJogo);
+document.getElementById('btn-entendi').addEventListener('click', () => {
+  document.getElementById('intro-overlay').classList.remove('show');
+  contagemRegressiva();
+});
 document.getElementById('btn-ver-ranking').addEventListener('click', verRanking);
 document.getElementById('btn-salvar').addEventListener('click', salvarResultado);
 document.getElementById('btn-jogar-dnv').addEventListener('click', jogarDenovo);
