@@ -249,6 +249,7 @@ function spawnPanqueca() {
 }
 
 // INPUT — clicar espirra SEMPRE
+const JATO_FRAMES = 4; // frames até o jato chegar na esteira (t += 0.25)
 function espirrar() {
   if (!jogoAtivo || pausado) return;
 
@@ -256,11 +257,16 @@ function espirrar() {
   jatos.push({t:0});
   splashes.push({x:dispenserX, y:zonaY, t:0});
 
-  // acha a panqueca cujo CENTRO está mais perto da linha vertical do dispenser
+  // velocidade atual da esteira (mesma conta do gameLoop)
+  const progV = 1 - (timeLeft/90);
+  const spdAtual = esteiraSpeed * (1 + progV*0.9);
+  const lead = spdAtual * JATO_FRAMES; // quanto a panqueca anda até o xarope cair
+
+  // acha a panqueca cujo CENTRO estará mais perto da mira QUANDO o xarope cair
   let alvo = null, menorDist = Infinity;
   for (const p of panquecas) {
     if (p.coberto) continue;
-    const d = Math.abs(p.x - dispenserX);
+    const d = Math.abs((p.x - lead) - dispenserX);
     if (d < menorDist) { menorDist = d; alvo = p; }
   }
 
@@ -275,7 +281,7 @@ function espirrar() {
   alvo.coberto = true;
   alvo.xaropeAnim = 0;
   let pts;
-  if (ratio <= 0.35) {
+  if (ratio <= 0.40) {
     pts = 10; perfeitas++; combo++; comboTimer = 180; alvo.quality = 1;
     addPopup(alvo.x, alvo.y - alvo.r*1.4, 'PERFEITO! +10', '#2ecc40');
   } else if (ratio <= 0.7) {
@@ -431,7 +437,7 @@ function drawPanqueca(p) {
 }
 
 function drawJato(j) {
-  j.t += 0.12;
+  j.t += 0.25;
   const prog = Math.min(1, j.t);
   const y0 = bicoY;
   const y1 = bicoY + (zonaY - bicoY) * prog;
