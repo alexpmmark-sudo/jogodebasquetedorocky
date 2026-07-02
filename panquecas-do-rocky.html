@@ -182,27 +182,35 @@ let perfeitas = 0, boas = 0, ruins = 0, erros = 0;
 
 // PANQUECAS na esteira
 let panquecas = [];
-let esteiraSpeed = 1.4;
+let esteiraSpeed = 2;
 let spawnTimer = 0;
-let splashes = []; // efeitos de xarope caindo
-let popups = []; // textos "PERFEITO!" etc
+let splashes = [];   // efeito de xarope caindo do bico
+let popups = [];     // textos "PERFEITO!" etc
+let jatos = [];      // jato de xarope descendo do recipiente
+
+// Recipiente fixo (garrafa de xarope)
+let dispenserX, dispenserY, bicoY, zonaY;
 
 function initGame() {
   resizeCanvas();
   score = 0; timeLeft = 120; combo = 0; comboTimer = 0;
   perfeitas = 0; boas = 0; ruins = 0; erros = 0;
-  panquecas = []; splashes = []; popups = [];
-  esteiraSpeed = W * 0.0016;
+  panquecas = []; splashes = []; popups = []; jatos = [];
+  esteiraSpeed = Math.max(2.2, W * 0.006); // ritmo normal, sem lesma
   spawnTimer = 0;
+  dispenserX = W * 0.5;
+  dispenserY = H * 0.16;
+  bicoY = H * 0.30;      // ponta do bico onde o xarope sai
+  zonaY = H * 0.60;      // altura da esteira onde as panquecas passam
 }
 
-// Cada panqueca: {x, y, r, coberta:0..1 quality, done}
+// Cada panqueca: {x, y, r, dourada, coberto, quality, xaropeAnim}
 function spawnPanqueca() {
   const dourada = Math.random() < 0.12;
-  const raio = dourada ? W*0.09 : (W*0.075 + Math.random()*W*0.04);
+  const raio = W * 0.085; // tamanho fixo, bonito
   panquecas.push({
     x: W + raio,
-    y: H*0.55 + (Math.random()-0.5)*H*0.12,
+    y: zonaY,
     r: raio,
     dourada,
     coberto: false,
@@ -211,171 +219,229 @@ function spawnPanqueca() {
   });
 }
 
-// INPUT
-function handleTap(px, py) {
+// INPUT — clicar espirra SEMPRE
+function espirrar() {
   if (!jogoAtivo || pausado) return;
-  // acha a panqueca mais próxima do clique que ainda não foi coberta
+
+  // jato visual sempre aparece
+  jatos.push({t:0});
+  splashes.push({x:dispenserX, y:zonaY, t:0});
+
+  // acha a panqueca cujo CENTRO está mais perto da linha vertical do dispenser
   let alvo = null, menorDist = Infinity;
   for (const p of panquecas) {
     if (p.coberto) continue;
-    const d = Math.sqrt((px-p.x)**2 + (py-p.y)**2);
+    const d = Math.abs(p.x - dispenserX);
     if (d < menorDist) { menorDist = d; alvo = p; }
   }
-  if (!alvo) return;
 
-  const dist = Math.sqrt((px-alvo.x)**2 + (py-alvo.y)**2);
-  const ratio = dist / alvo.r; // 0 = centro, 1 = borda
-
-  splashes.push({x:px, y:py, t:0, panq:alvo});
-
-  if (ratio > 1.15) {
-    // fora da panqueca
-    erros++;
-    combo = 0;
-    addPopup(px, py, 'FORA!', '#ff4444');
+  // se não tem panqueca perto o suficiente da mira -> erra mas espirra
+  if (!alvo || menorDist > alvo.r * 1.15) {
+    erros++; combo = 0;
+    addPopup(dispenserX, zonaY - W*0.12, 'FORA!', '#ff4444');
     return;
   }
 
+  const ratio = menorDist / alvo.r; // 0 = centro alinhado, 1 = beirada
   alvo.coberto = true;
   alvo.xaropeAnim = 0;
   let pts;
   if (ratio <= 0.35) {
-    pts = 10; perfeitas++; combo++; comboTimer = 180;
-    alvo.quality = 1;
-    addPopup(alvo.x, alvo.y - alvo.r, 'PERFEITO! +10', '#2ecc40');
+    pts = 10; perfeitas++; combo++; comboTimer = 180; alvo.quality = 1;
+    addPopup(alvo.x, alvo.y - alvo.r*1.4, 'PERFEITO! +10', '#2ecc40');
   } else if (ratio <= 0.7) {
-    pts = 5; boas++; combo++; comboTimer = 180;
-    alvo.quality = 0.6;
-    addPopup(alvo.x, alvo.y - alvo.r, 'BOM +5', '#ffc53d');
+    pts = 5; boas++; combo++; comboTimer = 180; alvo.quality = 0.6;
+    addPopup(alvo.x, alvo.y - alvo.r*1.4, 'BOM +5', '#ffc53d');
   } else {
-    pts = 2; ruins++; combo = 0;
-    alvo.quality = 0.3;
-    addPopup(alvo.x, alvo.y - alvo.r, 'QUASE +2', '#ff851b');
+    pts = 2; ruins++; combo = 0; alvo.quality = 0.3;
+    addPopup(alvo.x, alvo.y - alvo.r*1.4, 'QUASE +2', '#ff851b');
   }
 
-  // Combo bônus
   let mult = 1;
-  if (combo >= 3) { mult = 2; }
-  if (alvo.dourada) { mult *= 2; }
-  const ganho = pts * mult;
-  score += ganho;
-  if (mult > 1) addPopup(alvo.x, alvo.y + alvo.r*0.5, 'x'+mult, '#ff4136');
+  if (combo >= 3) mult = 2;
+  if (alvo.dourada) mult *= 2;
+  score += pts * mult;
+  if (mult > 1) addPopup(alvo.x, alvo.y + alvo.r*0.6, 'x'+mult, '#ff4136');
   document.getElementById('hud-score').textContent = score;
 }
 
-function addPopup(x, y, txt, cor) {
-  popups.push({x, y, txt, cor, t:0});
-}
+function addPopup(x, y, txt, cor) { popups.push({x, y, txt, cor, t:0}); }
 
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
-  const t = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  handleTap((t.clientX-rect.left)*(W/rect.width), (t.clientY-rect.top)*(H/rect.height));
+  espirrar();
 }, {passive:false});
-canvas.addEventListener('mousedown', e => {
-  const rect = canvas.getBoundingClientRect();
-  handleTap((e.clientX-rect.left)*(W/rect.width), (e.clientY-rect.top)*(H/rect.height));
-});
+canvas.addEventListener('mousedown', e => { espirrar(); });
 
 // DESENHO
 function drawMesa() {
-  // Fundo mesa de madeira
   const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'#8a5a2b');
-  grad.addColorStop(1,'#6a3f18');
+  grad.addColorStop(0,'#a0682f');
+  grad.addColorStop(1,'#7a4a1e');
   ctx.fillStyle = grad;
   ctx.fillRect(0,0,W,H);
-  // Tábuas de madeira
-  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  // tábuas
+  ctx.strokeStyle = 'rgba(0,0,0,0.10)';
   ctx.lineWidth = 2;
   for (let y = 0; y < H; y += H*0.13) {
     ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
   }
-  // Esteira (faixa central mais clara)
-  ctx.fillStyle = 'rgba(255,240,210,0.15)';
-  ctx.fillRect(0, H*0.4, W, H*0.32);
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  // esteira (faixa onde passam as panquecas)
+  const eGrad = ctx.createLinearGradient(0, zonaY - W*0.16, 0, zonaY + W*0.16);
+  eGrad.addColorStop(0,'rgba(60,40,20,0.35)');
+  eGrad.addColorStop(0.5,'rgba(90,60,30,0.15)');
+  eGrad.addColorStop(1,'rgba(60,40,20,0.35)');
+  ctx.fillStyle = eGrad;
+  ctx.fillRect(0, zonaY - W*0.16, W, W*0.32);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
   ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(0,H*0.4); ctx.lineTo(W,H*0.4); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0,H*0.72); ctx.lineTo(W,H*0.72); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, zonaY - W*0.16); ctx.lineTo(W, zonaY - W*0.16); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, zonaY + W*0.16); ctx.lineTo(W, zonaY + W*0.16); ctx.stroke();
+}
+
+function drawDispenser() {
+  const cx = dispenserX, topo = H*0.03, larg = W*0.13;
+  ctx.save();
+  // corpo da garrafa
+  ctx.fillStyle = '#7a3f10';
+  ctx.strokeStyle = '#4d2708';
+  ctx.lineWidth = 3;
+  roundRect(cx - larg/2, topo, larg, bicoY - topo - H*0.02, 10);
+  ctx.fill(); ctx.stroke();
+  // xarope dentro (reflexo)
+  ctx.fillStyle = 'rgba(255,180,60,0.35)';
+  roundRect(cx - larg/2 + 4, topo + 8, larg - 8, (bicoY - topo)*0.5, 8);
+  ctx.fill();
+  // rótulo
+  ctx.fillStyle = '#fff5e0';
+  roundRect(cx - larg*0.32, topo + (bicoY-topo)*0.3, larg*0.64, (bicoY-topo)*0.32, 4);
+  ctx.fill();
+  ctx.fillStyle = '#a8641f';
+  ctx.font = `bold ${larg*0.16}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('🍁', cx, topo + (bicoY-topo)*0.52);
+  // bico (funil)
+  ctx.fillStyle = '#5a2f0c';
+  ctx.beginPath();
+  ctx.moveTo(cx - larg*0.28, bicoY - H*0.02);
+  ctx.lineTo(cx + larg*0.28, bicoY - H*0.02);
+  ctx.lineTo(cx + W*0.012, bicoY);
+  ctx.lineTo(cx - W*0.012, bicoY);
+  ctx.closePath(); ctx.fill();
+  // linha de mira tracejada até a esteira
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 8]);
+  ctx.beginPath(); ctx.moveTo(cx, bicoY); ctx.lineTo(cx, zonaY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
 }
 
 function drawPanqueca(p) {
   ctx.save();
-  // Prato
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.beginPath(); ctx.ellipse(p.x, p.y+p.r*0.15, p.r*1.25, p.r*0.55, 0, 0, Math.PI*2); ctx.fill();
-  // Pilha de panqueca (3 camadas)
+  const topY = p.y - 2*p.r*0.26;
+  // sombra/prato
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.beginPath(); ctx.ellipse(p.x, p.y+p.r*0.30, p.r*1.35, p.r*0.42, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.ellipse(p.x, p.y+p.r*0.24, p.r*1.28, p.r*0.5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#e8e8e8';
+  ctx.beginPath(); ctx.ellipse(p.x, p.y+p.r*0.24, p.r*1.0, p.r*0.38, 0, 0, Math.PI*2); ctx.fill();
+  // pilha de 3 panquecas
   for (let i = 2; i >= 0; i--) {
-    const oy = p.y - i*p.r*0.28;
-    ctx.fillStyle = i%2===0 ? '#e0a860' : '#d49a4e';
-    ctx.beginPath(); ctx.ellipse(p.x, oy, p.r, p.r*0.42, 0, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = '#b87a34';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    const oy = p.y - i*p.r*0.26;
+    const g = ctx.createLinearGradient(0, oy-p.r*0.4, 0, oy+p.r*0.4);
+    g.addColorStop(0, i%2===0 ? '#efb96a' : '#e8ad57');
+    g.addColorStop(1, i%2===0 ? '#d69440' : '#cc8a38');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(p.x, oy, p.r, p.r*0.44, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#b8752e'; ctx.lineWidth = 2; ctx.stroke();
+    // borda tostada
+    ctx.strokeStyle = 'rgba(160,90,30,0.5)'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.ellipse(p.x, oy+p.r*0.06, p.r*0.94, p.r*0.40, 0, 0.15, Math.PI-0.15); ctx.stroke();
   }
-  const topY = p.y - 2*p.r*0.28;
-  // Xarope se coberto
+  // xarope se coberto
   if (p.coberto) {
-    p.xaropeAnim = Math.min(1, p.xaropeAnim + 0.08);
+    p.xaropeAnim = Math.min(1, p.xaropeAnim + 0.09);
     const a = p.xaropeAnim;
     ctx.save();
-    ctx.globalAlpha = 0.9 * a;
-    ctx.fillStyle = p.dourada ? '#ffb520' : '#c8781a';
-    // cobertura no topo proporcional à qualidade
-    const cobR = p.r * (0.55 + p.quality*0.45) * a;
-    ctx.beginPath(); ctx.ellipse(p.x, topY, cobR, cobR*0.42, 0, 0, Math.PI*2); ctx.fill();
-    // escorrido nas laterais
-    ctx.globalAlpha = 0.7 * a;
-    ctx.beginPath();
-    ctx.moveTo(p.x - cobR*0.7, topY);
-    ctx.quadraticCurveTo(p.x - p.r*0.8, p.y, p.x - p.r*0.5, p.y+p.r*0.3);
-    ctx.lineTo(p.x - p.r*0.3, p.y+p.r*0.2);
-    ctx.quadraticCurveTo(p.x - p.r*0.5, p.y, p.x, topY);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(p.x + cobR*0.7, topY);
-    ctx.quadraticCurveTo(p.x + p.r*0.8, p.y, p.x + p.r*0.5, p.y+p.r*0.3);
-    ctx.lineTo(p.x + p.r*0.3, p.y+p.r*0.2);
-    ctx.quadraticCurveTo(p.x + p.r*0.5, p.y, p.x, topY);
-    ctx.fill();
+    ctx.fillStyle = p.dourada ? '#ffb520' : '#b8690f';
+    ctx.globalAlpha = 0.92 * a;
+    const cobR = p.r * (0.5 + p.quality*0.5) * a;
+    ctx.beginPath(); ctx.ellipse(p.x, topY, cobR, cobR*0.44, 0, 0, Math.PI*2); ctx.fill();
+    // escorridos
+    ctx.globalAlpha = 0.75 * a;
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(p.x + s*cobR*0.6, topY);
+      ctx.quadraticCurveTo(p.x + s*p.r*0.75, p.y, p.x + s*p.r*0.5, p.y + p.r*0.3);
+      ctx.lineTo(p.x + s*p.r*0.28, p.y + p.r*0.22);
+      ctx.quadraticCurveTo(p.x + s*p.r*0.45, p.y, p.x, topY);
+      ctx.fill();
+    }
     ctx.restore();
     // manteiga
     ctx.fillStyle = '#fff2a8';
-    ctx.fillRect(p.x - p.r*0.15, topY - p.r*0.12, p.r*0.3, p.r*0.2);
+    ctx.strokeStyle = '#e8d060'; ctx.lineWidth = 1;
+    roundRect(p.x - p.r*0.16, topY - p.r*0.14, p.r*0.32, p.r*0.22, 3);
+    ctx.fill(); ctx.stroke();
   }
-  // brilho dourada
+  // dourada destaque
   if (p.dourada && !p.coberto) {
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.ellipse(p.x, topY, p.r*1.08, p.r*0.48, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(p.x, topY, p.r*1.06, p.r*0.48, 0, 0, Math.PI*2); ctx.stroke();
     ctx.fillStyle = '#ffd700';
-    ctx.font = `bold ${p.r*0.4}px sans-serif`;
-    ctx.textAlign='center';
-    ctx.fillText('★', p.x, p.y - p.r*1.1);
+    ctx.font = `bold ${p.r*0.5}px sans-serif`; ctx.textAlign='center';
+    ctx.fillText('★', p.x, p.y - p.r*1.15);
   }
   ctx.restore();
 }
 
+function drawJato(j) {
+  j.t += 0.12;
+  const prog = Math.min(1, j.t);
+  const y0 = bicoY;
+  const y1 = bicoY + (zonaY - bicoY) * prog;
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, 1 - (j.t-1));
+  ctx.strokeStyle = '#c8781a';
+  ctx.lineWidth = W*0.02;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(dispenserX, y0); ctx.lineTo(dispenserX, y1); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,180,60,0.6)';
+  ctx.lineWidth = W*0.008;
+  ctx.beginPath(); ctx.moveTo(dispenserX, y0); ctx.lineTo(dispenserX, y1); ctx.stroke();
+  ctx.restore();
+}
+
 function drawSplash(s) {
-  s.t += 0.1;
+  s.t += 0.08;
   ctx.save();
   ctx.globalAlpha = Math.max(0, 1 - s.t);
   ctx.fillStyle = '#c8781a';
-  const n = 6;
+  const n = 7;
   for (let i=0;i<n;i++){
     const ang = (i/n)*Math.PI*2;
-    const d = s.t * 30;
+    const d = s.t * W*0.08;
     ctx.beginPath();
-    ctx.arc(s.x + Math.cos(ang)*d, s.y + Math.sin(ang)*d, 4*(1-s.t), 0, Math.PI*2);
+    ctx.arc(s.x + Math.cos(ang)*d, s.y + Math.sin(ang)*d*0.5, W*0.012*(1-s.t), 0, Math.PI*2);
     ctx.fill();
   }
   ctx.restore();
 }
 
 function drawPopup(pp) {
-  pp.t += 0.02;
+  pp.t += 0.018;
   ctx.save();
   ctx.globalAlpha = Math.max(0, 1 - pp.t);
   ctx.fillStyle = pp.cor;
@@ -392,30 +458,31 @@ function gameLoop() {
   if (!jogoAtivo) return;
   if (pausado) { animFrame = requestAnimationFrame(gameLoop); return; }
 
-  // Dificuldade cresce: velocidade aumenta com o tempo
+  // velocidade sobe suave com o tempo (fácil no início)
   const prog = 1 - (timeLeft/120);
-  const spd = esteiraSpeed * (1 + prog*1.2);
+  const spd = esteiraSpeed * (1 + prog*0.9);
 
-  // Spawn
   spawnTimer--;
   if (spawnTimer <= 0) {
     spawnPanqueca();
-    spawnTimer = Math.max(40, 90 - prog*45);
+    // espaçamento entre panquecas (uma atrás da outra), diminui com o tempo
+    const gap = (W*0.30) / spd;
+    spawnTimer = Math.max(28, gap);
   }
 
-  // Combo timer
   if (comboTimer > 0) { comboTimer--; if (comboTimer===0) combo=0; }
 
-  // Move panquecas
   for (const p of panquecas) p.x -= spd;
-  panquecas = panquecas.filter(p => p.x > -p.r*1.5);
+  panquecas = panquecas.filter(p => p.x > -p.r*1.8);
 
-  // HUD combo
   document.getElementById('hud-combo').textContent = combo >= 3 ? '🔥x2 ('+combo+')' : (combo>0?combo+' seq':'');
 
   ctx.clearRect(0,0,W,H);
   drawMesa();
   for (const p of panquecas) drawPanqueca(p);
+  jatos = jatos.filter(j => j.t < 2);
+  for (const j of jatos) drawJato(j);
+  drawDispenser();
   splashes = splashes.filter(s => s.t < 1);
   for (const s of splashes) drawSplash(s);
   popups = popups.filter(pp => pp.t < 1);
