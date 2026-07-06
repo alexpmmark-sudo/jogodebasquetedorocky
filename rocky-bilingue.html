@@ -214,7 +214,7 @@ body{background:#0a2c4d;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 <!-- RANKING -->
 <div id="screen-ranking" class="screen">
   <div class="ranking-titulo">🏆 Ranking — Rocky Bilíngue</div>
-  <div class="ranking-sub">Top 3 de cada equipe</div>
+  <div class="ranking-sub">Top 3 de cada equipe · pódio de países diferentes</div>
   <div id="ranking-lista" style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:70vh;overflow-y:auto;">
     <div class="loading">Carregando...</div>
   </div>
@@ -556,16 +556,26 @@ async function verRanking() {
     }
     filtrados.sort((a,b)=>(b.score||0)-(a.score||0));
 
+    // MEDALHAS (🥇🥈🥉) só para os 3 primeiros de PAÍSES DIFERENTES
+    const paisesMed = [];
+    for (const r of filtrados) {
+      if (paisesMed.length >= 3) break;
+      const p = r.country || '—';
+      if (!paisesMed.includes(p)) { paisesMed.push(p); r._medalha = paisesMed.length; }
+    }
+
     if (!filtrados.length) { lista.innerHTML = '<div class="loading">Nenhum resultado ainda!</div>'; return; }
-    lista.innerHTML = filtrados.map((r,i)=>`
-      <div class="ranking-item ${i===0?'top1':''}">
-        <span class="rank-pos">${i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)))}</span>
+    lista.innerHTML = filtrados.map((r,i)=>{
+      const med = r._medalha === 1 ? '🥇' : (r._medalha === 2 ? '🥈' : (r._medalha === 3 ? '🥉' : (i+1)));
+      return `
+      <div class="ranking-item ${r._medalha===1?'top1':''}">
+        <span class="rank-pos">${med}</span>
         <div class="rank-info">
           <div class="rank-nome">${r.name||'—'}</div>
           <div class="rank-pais">${r.country||'—'} · 🕐 ${r.finishedLocal||'—'}${r.dur?` · ⏱️ ${Math.floor(r.dur/60)}m${String(r.dur%60).padStart(2,'0')}s`:''}</div>
         </div>
         <span class="rank-pts">${r.score||0}</span>
-      </div>`).join('');
+      </div>`;}).join('');
   } catch(e) {
     lista.innerHTML = '<div class="loading">Erro ao carregar.</div>';
   }
