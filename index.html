@@ -36,7 +36,9 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 @keyframes pulaRocky{0%,100%{transform:scale(1);}50%{transform:scale(1.18) rotate(-4deg);}}
 @media (max-height:520px){ #topo-img{height:64px;top:46px;} }
 
-#intro-overlay,#countdown-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:40;align-items:center;justify-content:center;}
+#intro-overlay,#countdown-overlay,#pause-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:40;align-items:center;justify-content:center;}
+#pause-overlay{background:rgba(4,20,32,0.93);padding:20px;z-index:45;}
+#pause-overlay.show{display:flex;}
 #intro-overlay{background:rgba(0,0,0,0.85);padding:12px;overflow-y:auto;}
 #intro-overlay.show,#countdown-overlay.show{display:flex;}
 .intro-box{background:linear-gradient(180deg,#2a6a95,#173f5c);border:3px solid #ffd93b;border-radius:18px;padding:22px 20px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px;color:#fff;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;}
@@ -93,7 +95,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 <div id="screen-cadastro" class="screen active">
   <div id="cadastro-content">
   <div class="game-title">Pesca no Gelo 🎣</div>
-  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-11</div>
+  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-12</div>
   <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="Rocky">
   <div class="input-group">
     <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
@@ -127,7 +129,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <div id="game-container">
     <div id="hud">
       <div class="hud-score" id="hud-score">🐟 0</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:700;">v10.07-11</div>
+      <button id="btn-pausa" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.35);border-radius:8px;color:#fff;font-size:16px;padding:4px 14px;cursor:pointer;">⏸️</button>
       <div class="hud-tempo" id="hud-tempo">⏱️ 60</div>
     </div>
     <img id="topo-img" src="" alt="">
@@ -145,6 +147,15 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
       </div>
     </div>
     <div id="countdown-overlay"><div id="countdown-num">3</div></div>
+    <div id="pause-overlay">
+      <div class="intro-box" style="align-items:center;text-align:center;">
+        <div class="intro-titulo">⏸️ Jogo Pausado</div>
+        <div style="font-size:13px;color:#d6ecf7;">O tempo parou. Respira e volta pra pescaria! 🎣</div>
+        <button class="btn-jogar" id="btn-continuar" style="max-width:100%;">▶️ CONTINUAR</button>
+        <button class="btn-voltar" id="btn-sair-pausa" style="width:100%;">🚪 Sair do jogo</button>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4);">v10.07-12</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -230,6 +241,7 @@ let selo = 0, fisgados = 0;
 function resetSelo(){ selo = 5381; fisgados = 0; }
 function atualizaSelo(v){ selo = ((selo * 33) ^ (v + score + 7)) % CHK_M; selo = (selo + CHK_K) % CHK_M; fisgados++; }
 
+let pausado = false, pausaInicio = 0;
 let comemorar = 0;        // frames da animacao do dourado
 let dourados = 0;         // dourados pescados na partida
 let powerups = [];        // {x,y,r,tipo,dir,vel}
@@ -282,8 +294,28 @@ function criarPowerup() {
   powerups.push({ x, y, r, tipo, dir, vel });
 }
 
+function pausarJogo() {
+  if (!jogoAtivo || pausado) return;
+  pausado = true; pausaInicio = Date.now();
+  cancelAnimationFrame(animFrame);
+  document.getElementById('pause-overlay').classList.add('show');
+}
+function continuarJogo() {
+  if (!pausado) return;
+  pausado = false;
+  tempoInicio += Date.now() - pausaInicio; // devolve o tempo pausado
+  document.getElementById('pause-overlay').classList.remove('show');
+  if (canvasDessincronizado()) resizeCanvas();
+  gameLoop();
+}
+function sairDaPausa() {
+  pausado = false;
+  document.getElementById('pause-overlay').classList.remove('show');
+  voltarCadastro();
+}
+
 function fisgar(px, py) {
-  if (!jogoAtivo || inputTravado) return;
+  if (!jogoAtivo || inputTravado || pausado) return;
 
   // primeiro: power-ups (prioridade)
   for (let i = powerups.length - 1; i >= 0; i--) {
@@ -530,7 +562,8 @@ function gameLoop() {
 function roundRectG(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 function prepararJogo() {
-  jaSlvou = false; jogoAtivo = false; inputTravado = false; cancelAnimationFrame(animFrame);
+  jaSlvou = false; jogoAtivo = false; inputTravado = false; pausado = false; cancelAnimationFrame(animFrame);
+  document.getElementById('pause-overlay').classList.remove('show');
   showScreen('screen-jogo');
   setTimeout(() => { initGame(); ctx.clearRect(0,0,W,H); drawFundo(); for(const p of peixes) drawPeixe(p); }, 100);
 }
@@ -592,9 +625,10 @@ async function salvarResultado() {
 }
 function jogarDenovo() { prepararJogo(); setTimeout(contagemRegressiva, 150); }
 function voltarCadastro() {
-  jogoAtivo = false; cancelAnimationFrame(animFrame);
+  jogoAtivo = false; pausado = false; cancelAnimationFrame(animFrame);
   document.getElementById('intro-overlay').classList.remove('show');
   document.getElementById('countdown-overlay').classList.remove('show');
+  document.getElementById('pause-overlay').classList.remove('show');
   showScreen('screen-cadastro');
 }
 
@@ -669,6 +703,9 @@ document.getElementById('btn-salvar').addEventListener('click', salvarResultado)
 document.getElementById('btn-jogar-dnv').addEventListener('click', jogarDenovo);
 document.getElementById('btn-voltar-res').addEventListener('click', voltarCadastro);
 document.getElementById('btn-voltar-rank').addEventListener('click', voltarCadastro);
+document.getElementById('btn-pausa').addEventListener('click', pausarJogo);
+document.getElementById('btn-continuar').addEventListener('click', continuarJogo);
+document.getElementById('btn-sair-pausa').addEventListener('click', sairDaPausa);
 </script>
 </body>
 </html>
