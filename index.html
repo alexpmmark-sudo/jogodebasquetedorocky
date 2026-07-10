@@ -592,7 +592,7 @@ async function verRanking() {
         <div class="rank-info">
           <div class="rank-nome">${r.name||'—'}</div>
           <div class="rank-pais">${r.country||'—'}${r.horaCurta?' · 🕐 '+r.horaCurta:''}</div>
-          <div class="rank-comp">🔵 ${r.nAzul||0}×5 · 🟡 ${r.nGrande||0}×15 · ⭐ ${r.nDourado||0}×30${(r.nBaiacu)?' · 🐡 '+r.nBaiacu+'×(-15)':''}</div>
+          <div class="rank-comp">🔵 Azul ${r.nAzul||0} · 🟡 Grande ${r.nGrande||0} · ⭐ Dourado ${r.nDourado||0} · 🐡 Baiacu ${r.nBaiacu||0}</div>
         </div>
         ${blocoPts}
       </div>`;}).join('');
