@@ -33,9 +33,16 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 #canvas{width:100%;flex:1;display:block;touch-action:none;}
 
 #intro-overlay,#countdown-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:40;align-items:center;justify-content:center;}
-#intro-overlay{background:rgba(0,0,0,0.85);padding:20px;}
+#intro-overlay{background:rgba(0,0,0,0.85);padding:12px;overflow-y:auto;}
 #intro-overlay.show,#countdown-overlay.show{display:flex;}
-.intro-box{background:linear-gradient(180deg,#2a6a95,#173f5c);border:3px solid #ffd93b;border-radius:18px;padding:22px 20px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px;color:#fff;}
+.intro-box{background:linear-gradient(180deg,#2a6a95,#173f5c);border:3px solid #ffd93b;border-radius:18px;padding:22px 20px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px;color:#fff;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;}
+@media (max-height:520px){
+  .intro-box{max-width:600px;padding:12px 16px;gap:7px;}
+  .intro-titulo{font-size:17px;}
+  .intro-item{font-size:12.5px;line-height:1.3;}
+  .intro-item .ic{font-size:16px;}
+  .intro-box .btn-jogar{padding:10px;font-size:15px;margin-top:2px;}
+}
 .intro-titulo{font-size:22px;font-weight:900;text-align:center;color:#ffd93b;}
 .intro-item{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;}
 .intro-item .ic{font-size:20px;flex-shrink:0;}
@@ -362,25 +369,26 @@ function drawFundo() {
 
 function drawTopo() {
   // Rocky + urso debrucados no gelo; troca pela comemoracao quando fisga o dourado
+  const BHs = Math.min(BH, H * 0.5); // trava de seguranca: no maximo metade da tela
   if (comemorar > 0) {
     const t = 1 - comemorar/90;
     // brilho dourado por tras
-    const gl = ctx.createRadialGradient(W*0.5, BH*0.45, 8, W*0.5, BH*0.45, W*0.55);
+    const gl = ctx.createRadialGradient(W*0.5, BHs*0.45, 8, W*0.5, BHs*0.45, W*0.55);
     const alfa = 0.55 * Math.max(0, 1 - t);
     gl.addColorStop(0,'rgba(255,220,90,'+alfa.toFixed(2)+')'); gl.addColorStop(1,'rgba(255,220,90,0)');
-    ctx.fillStyle = gl; ctx.fillRect(0,0,W,BH*1.15);
+    ctx.fillStyle = gl; ctx.fillRect(0,0,W,BHs*1.15);
     const s = 1 + 0.07*Math.sin(Math.min(1,t*2.5)*Math.PI); // pop rapidinho
-    const bw = Math.min(W, BH / TOPO_RATIO);
+    const bw = Math.min(W, BHs / TOPO_RATIO);
     if (imgCelebra.complete && imgCelebra.naturalWidth) {
-      ctx.save(); ctx.translate(W*0.5, BH*0.55); ctx.scale(s,s);
-      ctx.drawImage(imgCelebra, -bw*0.5, -BH*0.55, bw, BH); ctx.restore();
+      ctx.save(); ctx.translate(W*0.5, BHs*0.55); ctx.scale(s,s);
+      ctx.drawImage(imgCelebra, -bw*0.5, -BHs*0.55, bw, BHs); ctx.restore();
     }
     ctx.fillStyle='rgba(255,217,59,'+Math.max(0,1-t).toFixed(2)+')';
     ctx.font='bold '+Math.round(W*0.05)+'px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('🌟 DOURADO! +30', W*0.5, BH + 24); ctx.textAlign='start';
+    ctx.fillText('🌟 DOURADO! +30', W*0.5, BHs + 24); ctx.textAlign='start';
   } else if (imgTopo.complete && imgTopo.naturalWidth) {
-    const bw = Math.min(W, BH / TOPO_RATIO);
-    ctx.drawImage(imgTopo, (W - bw)*0.5, 0, bw, BH);
+    const bw = Math.min(W, BHs / TOPO_RATIO);
+    ctx.drawImage(imgTopo, (W - bw)*0.5, 0, bw, BHs);
   }
 }
 
@@ -473,9 +481,15 @@ function drawSplashes() {
   splashes = splashes.filter(s=>s.t<1);
 }
 
+function canvasDessincronizado() {
+  const r = canvas.getBoundingClientRect();
+  return r.width > 0 && (Math.abs(r.width - W) > 2 || Math.abs(r.height - H) > 2);
+}
 function gameLoop() {
   if (!jogoAtivo) return;
   tempoJogo++;
+  // seguro: alguns celulares nao disparam resize ao virar/entrar em fullscreen
+  if (tempoJogo % 20 === 0 && canvasDessincronizado()) aoRedimensionar();
   tempoRestante -= 1/60;
   if (tempoRestante <= 0) { tempoRestante = 0; terminarJogo(); return; }
   const tShow = Math.ceil(tempoRestante);
@@ -544,10 +558,11 @@ function prepararJogo() {
   setTimeout(() => { initGame(); ctx.clearRect(0,0,W,H); drawFundo(); drawTopo(); for(const p of peixes) drawPeixe(p); }, 100);
 }
 function contagemRegressiva() {
+  if (canvasDessincronizado()) resizeCanvas();
   const ov = document.getElementById('countdown-overlay'), num = document.getElementById('countdown-num');
   ov.classList.add('show'); const seq=['3','2','1','JÁ!']; let i=0;
   function mostra(){ num.textContent=seq[i]; num.style.fontSize=seq[i]==='JÁ!'?'80px':'110px'; num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop'); i++;
-    if(i<seq.length) setTimeout(mostra,800); else setTimeout(()=>{ov.classList.remove('show'); jogoAtivo=true; tempoInicio=Date.now(); gameLoop();},600); }
+    if(i<seq.length) setTimeout(mostra,800); else setTimeout(()=>{ov.classList.remove('show'); if(canvasDessincronizado()) resizeCanvas(); jogoAtivo=true; tempoInicio=Date.now(); gameLoop();},600); }
   mostra();
 }
 function iniciarJogo() {
