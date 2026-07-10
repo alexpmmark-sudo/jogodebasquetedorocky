@@ -237,16 +237,16 @@ function initGame() {
   document.getElementById('hud-score').textContent = '🐟 0';
   document.getElementById('hud-tempo').textContent = '⏱️ 60';
   document.getElementById('hud-tempo').classList.remove('urgente');
-  for (let i=0;i<3;i++) criarPeixe();
+  for (let i=0;i<6;i++) criarPeixe();
 }
 
 function criarPeixe() {
   const rnd = Math.random();
   let tipo;
-  // baiacu aparece bastante (~28%), dourado raro (~5%), grande (~18%), resto pequeno
-  if (rnd < 0.05) tipo = 'dourado';
-  else if (rnd < 0.33) tipo = 'baiacu';
-  else if (rnd < 0.51) tipo = 'grande';
+  // dourado raro (~4%), baiacu bastante (~30%), grande pouco (~12%), resto azul (~54%)
+  if (rnd < 0.04) tipo = 'dourado';
+  else if (rnd < 0.34) tipo = 'baiacu';
+  else if (rnd < 0.46) tipo = 'grande';
   else tipo = 'pequeno';
 
   const dir = Math.random() < 0.5 ? 1 : -1;
@@ -451,9 +451,12 @@ function gameLoop() {
 
   // spawn peixes
   spawnTimer++;
-  const intervalo = Math.max(18, 40 - tempoJogo*0.03);
-  const maxPeixes = 6 + Math.floor(tempoJogo/300);
-  if (spawnTimer >= intervalo && peixes.length < maxPeixes) { spawnTimer = 0; criarPeixe(); }
+  const intervalo = Math.max(10, 22 - tempoJogo*0.03);
+  const maxPeixes = 10 + Math.floor(tempoJogo/250);
+  if (spawnTimer >= intervalo && peixes.length < maxPeixes) {
+    spawnTimer = 0; criarPeixe();
+    if (Math.random() < 0.5 && peixes.length < maxPeixes) criarPeixe();
+  }
 
   // spawn power-up (de vez em quando)
   powerupSpawnTimer++;
