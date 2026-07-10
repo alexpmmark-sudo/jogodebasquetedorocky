@@ -85,14 +85,6 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   .rocky-cadastro{width:280px;}
   .input-group,.btn-jogar,.btn-ranking-link{max-width:380px;}
 }
-
-#rotate-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:90;background:rgba(6,25,38,0.96);align-items:center;justify-content:center;padding:24px;}
-#rotate-overlay.show{display:flex;}
-.rotate-box{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;color:#fff;}
-.rotate-icon{font-size:64px;animation:girar 1.6s ease-in-out infinite;}
-@keyframes girar{0%,20%{transform:rotate(0deg);}55%,80%{transform:rotate(90deg);}100%{transform:rotate(90deg);}}
-.rotate-titulo{font-size:20px;font-weight:900;color:#ffd93b;}
-.rotate-sub{font-size:14px;color:#d6ecf7;max-width:280px;line-height:1.4;}
 </style>
 </head>
 <body>
@@ -101,7 +93,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 <div id="screen-cadastro" class="screen active">
   <div id="cadastro-content">
   <div class="game-title">Pesca no Gelo 🎣</div>
-  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-9</div>
+  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-10</div>
   <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="Rocky">
   <div class="input-group">
     <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
@@ -135,7 +127,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <div id="game-container">
     <div id="hud">
       <div class="hud-score" id="hud-score">🐟 0</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:700;">v10.07-9</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:700;">v10.07-10</div>
       <div class="hud-tempo" id="hud-tempo">⏱️ 60</div>
     </div>
     <img id="topo-img" src="" alt="">
@@ -165,14 +157,6 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <button class="btn-salvar" id="btn-salvar">💾 Salvar no Ranking</button>
   <button class="btn-jogar-dnv" id="btn-jogar-dnv">🔄 Jogar de Novo</button>
   <button class="btn-voltar" id="btn-voltar-res">← Voltar</button>
-</div>
-
-<div id="rotate-overlay">
-  <div class="rotate-box">
-    <div class="rotate-icon">📱</div>
-    <div class="rotate-titulo">Vire o celular! 🎣</div>
-    <div class="rotate-sub">O lago é largo — a pescaria é melhor com a tela na horizontal. O jogo fica pausado enquanto isso.</div>
-  </div>
 </div>
 
 <div id="screen-ranking" class="screen">
@@ -222,17 +206,13 @@ let W = 0, H = 0, BH = 0, AGUA_TOP = 0, REF = 0;
 function resizeCanvas() {
   const r = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  // buffer fisico do tamanho real do elemento
+  W = r.width; H = r.height;
   canvas.width = Math.max(2, Math.round(r.width * dpr));
   canvas.height = Math.max(2, Math.round(r.height * dpr));
-  // MUNDO LOGICO: altura fixa 360; largura segue a proporcao da tela.
-  // O desenho e esticado pra preencher o canvas — o lago SEMPRE aparece inteiro.
-  H = 360;
-  W = Math.min(1400, Math.max(320, Math.round(360 * r.width / Math.max(1, r.height))));
-  ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
-  BH = 28;                                       // borda de gelo fininha fixa
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  BH = H * 0.08;                                 // borda de gelo fininha; o resto é LAGO
   AGUA_TOP = 0;
-  REF = Math.min(W, 540);                        // tamanho dos peixes: constante e sensato
+  REF = Math.min(W, H * 1.5);
 }
 
 let nomeJogador = '', paisJogador = '';
@@ -481,8 +461,7 @@ function drawSplashes() {
 
 function canvasDessincronizado() {
   const r = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  return r.width > 0 && (Math.abs(r.width * dpr - canvas.width) > 4 || Math.abs(r.height * dpr - canvas.height) > 4);
+  return r.width > 0 && (Math.abs(r.width - W) > 2 || Math.abs(r.height - H) > 2);
 }
 function gameLoop() {
   if (!jogoAtivo) return;
@@ -502,7 +481,7 @@ function gameLoop() {
   // spawn peixes
   spawnTimer++;
   const intervalo = Math.max(18, 40 - tempoJogo*0.03);
-  const maxPeixes = (W > H ? 8 : 6) + Math.floor(tempoJogo/300);
+  const maxPeixes = 6 + Math.floor(tempoJogo/300);
   if (spawnTimer >= intervalo && peixes.length < maxPeixes) { spawnTimer = 0; criarPeixe(); }
 
   // spawn power-up (de vez em quando)
@@ -569,7 +548,6 @@ function iniciarJogo() {
   if (!nome) { alert('Digite seu nome!'); return; }
   if (!pais) { alert('Escolha seu país!'); return; }
   nomeJogador = nome; paisJogador = pais;
-  tentarPaisagem();
   prepararJogo();
   document.getElementById('intro-overlay').classList.add('show');
 }
@@ -612,7 +590,7 @@ async function salvarResultado() {
     jaSlvou = false;
   }
 }
-function jogarDenovo() { tentarPaisagem(); prepararJogo(); setTimeout(contagemRegressiva, 150); }
+function jogarDenovo() { prepararJogo(); setTimeout(contagemRegressiva, 150); }
 function voltarCadastro() {
   jogoAtivo = false; cancelAnimationFrame(animFrame);
   document.getElementById('intro-overlay').classList.remove('show');
@@ -661,36 +639,8 @@ async function verRanking() {
   } catch(e) { lista.innerHTML = '<div class="loading">Erro ao carregar.</div>'; }
 }
 
-function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); checarOrientacao(); }
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-// ─── Paisagem no celular ───
-let pausaInicio = 0;
-function precisaGirar(){
-  return window.matchMedia('(pointer: coarse)').matches && window.innerHeight > window.innerWidth;
-}
-async function tentarPaisagem(){
-  if (!window.matchMedia('(pointer: coarse)').matches) return; // só celular/tablet
-  try { if (document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen(); } catch(e) {}
-  try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape'); } catch(e) {}
-}
-function checarOrientacao(){
-  const ov = document.getElementById('rotate-overlay');
-  const telaJogo = document.getElementById('screen-jogo').classList.contains('active');
-  const mostrar = telaJogo && precisaGirar();
-  const jaVisivel = ov.classList.contains('show');
-  if (mostrar && !jaVisivel) {
-    ov.classList.add('show');
-    if (jogoAtivo) { pausaInicio = Date.now(); cancelAnimationFrame(animFrame); }
-  } else if (!mostrar && jaVisivel) {
-    ov.classList.remove('show');
-    if (jogoAtivo) {
-      if (pausaInicio) tempoInicio += Date.now() - pausaInicio; // devolve o tempo pausado
-      pausaInicio = 0;
-      resizeCanvas();
-      gameLoop();
-    }
-  }
-}
 function aoRedimensionar(){
   const telaJogo = document.getElementById('screen-jogo').classList.contains('active');
   if (telaJogo) {
@@ -703,7 +653,6 @@ function aoRedimensionar(){
     }
     if (!jogoAtivo) { ctx.clearRect(0,0,W,H); drawFundo(); for (const p of peixes) drawPeixe(p); }
   }
-  checarOrientacao();
 }
 window.addEventListener('resize', aoRedimensionar);
 window.addEventListener('orientationchange', () => setTimeout(aoRedimensionar, 250));
@@ -711,15 +660,7 @@ document.addEventListener('fullscreenchange', () => setTimeout(aoRedimensionar, 
 if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(aoRedimensionar, 100));
 
 document.getElementById('btn-iniciar').addEventListener('click', iniciarJogo);
-document.getElementById('btn-entendi').addEventListener('click', () => {
-  document.getElementById('intro-overlay').classList.remove('show');
-  tentarPaisagem();
-  function esperaGirar(){
-    if (precisaGirar()) { setTimeout(esperaGirar, 300); return; }
-    resizeCanvas(); contagemRegressiva();
-  }
-  esperaGirar();
-});
+document.getElementById('btn-entendi').addEventListener('click', () => { document.getElementById('intro-overlay').classList.remove('show'); contagemRegressiva(); });
 document.getElementById('btn-ver-ranking').addEventListener('click', verRanking);
 document.getElementById('btn-salvar').addEventListener('click', salvarResultado);
 document.getElementById('btn-jogar-dnv').addEventListener('click', jogarDenovo);
