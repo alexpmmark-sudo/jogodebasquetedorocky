@@ -101,7 +101,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 <div id="screen-cadastro" class="screen active">
   <div id="cadastro-content">
   <div class="game-title">Pesca no Gelo 🎣</div>
-  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-8</div>
+  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-9</div>
   <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="Rocky">
   <div class="input-group">
     <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
@@ -135,7 +135,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <div id="game-container">
     <div id="hud">
       <div class="hud-score" id="hud-score">🐟 0</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:700;">v10.07-8</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:700;">v10.07-9</div>
       <div class="hud-tempo" id="hud-tempo">⏱️ 60</div>
     </div>
     <img id="topo-img" src="" alt="">
@@ -222,13 +222,17 @@ let W = 0, H = 0, BH = 0, AGUA_TOP = 0, REF = 0;
 function resizeCanvas() {
   const r = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  W = r.width; H = r.height;
-  canvas.width = Math.round(r.width * dpr);
-  canvas.height = Math.round(r.height * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  BH = H * 0.08;                                 // borda de gelo fininha; o resto todo é LAGO
+  // buffer fisico do tamanho real do elemento
+  canvas.width = Math.max(2, Math.round(r.width * dpr));
+  canvas.height = Math.max(2, Math.round(r.height * dpr));
+  // MUNDO LOGICO: altura fixa 360; largura segue a proporcao da tela.
+  // O desenho e esticado pra preencher o canvas — o lago SEMPRE aparece inteiro.
+  H = 360;
+  W = Math.min(1400, Math.max(320, Math.round(360 * r.width / Math.max(1, r.height))));
+  ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+  BH = 28;                                       // borda de gelo fininha fixa
   AGUA_TOP = 0;
-  REF = Math.min(W, H * 1.5);                    // base de tamanho (paisagem nao infla os peixes)
+  REF = Math.min(W, 540);                        // tamanho dos peixes: constante e sensato
 }
 
 let nomeJogador = '', paisJogador = '';
@@ -477,7 +481,8 @@ function drawSplashes() {
 
 function canvasDessincronizado() {
   const r = canvas.getBoundingClientRect();
-  return r.width > 0 && (Math.abs(r.width - W) > 2 || Math.abs(r.height - H) > 2);
+  const dpr = window.devicePixelRatio || 1;
+  return r.width > 0 && (Math.abs(r.width * dpr - canvas.width) > 4 || Math.abs(r.height * dpr - canvas.height) > 4);
 }
 function gameLoop() {
   if (!jogoAtivo) return;
