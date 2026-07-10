@@ -93,7 +93,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 <div id="screen-cadastro" class="screen active">
   <div id="cadastro-content">
   <div class="game-title">Pesca no Gelo 🎣</div>
-  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-10</div>
+  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-11</div>
   <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="Rocky">
   <div class="input-group">
     <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
@@ -127,7 +127,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <div id="game-container">
     <div id="hud">
       <div class="hud-score" id="hud-score">🐟 0</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:700;">v10.07-10</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:700;">v10.07-11</div>
       <div class="hud-tempo" id="hud-tempo">⏱️ 60</div>
     </div>
     <img id="topo-img" src="" alt="">
@@ -622,10 +622,13 @@ async function verRanking() {
       const noPodio = i < 3;
       // pódio mostra cheio em destaque; fora do pódio mostra cheio riscado + metade valendo
       const blocoPts = noPodio
-        ? `<span class="rank-pts">${cheio}</span>`
+        ? `<div style="text-align:right;">
+             <div class="rank-pts">${cheio} pts</div>
+             <div style="font-size:10px;color:#b8f5c0;font-weight:700;">pódio · vale cheio ✅</div>
+           </div>`
         : `<div style="text-align:right;">
-             <div style="font-size:12px;color:#c9dfae;text-decoration:line-through;">${cheio}</div>
-             <div class="rank-pts" style="font-size:16px;">${metade} <span style="font-size:10px;color:#d6ecf7;">(½)</span></div>
+             <div style="font-size:12px;color:#ffd0c9;text-decoration:line-through;">${cheio} pts</div>
+             <div class="rank-pts" style="font-size:16px;">${metade} pts <span style="font-size:10px;color:#d6ecf7;">(vale ½)</span></div>
            </div>`;
       return `
       <div class="ranking-item ${i===0?'top1':''}">
