@@ -7,7 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;}
-#app{width:100vw;max-width:520px;min-height:100vh;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#app{width:100vw;max-width:520px;min-height:100vh;min-height:100dvh;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 .screen{display:none;width:100%;flex-direction:column;align-items:center;}
 .screen.active{display:flex;}
 
@@ -25,7 +25,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 .btn-ranking-link{background:rgba(255,255,255,0.92);border:2px solid #1a5a80;color:#0a2233;font-size:14px;padding:10px 24px;border-radius:10px;cursor:pointer;margin-top:2px;font-weight:700;max-width:340px;width:100%;}
 
 #screen-jogo{padding:0;background:#0a2233;}
-#game-container{width:100%;max-width:520px;height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;}
+#game-container{width:100%;max-width:520px;height:100vh;height:100dvh;position:relative;overflow:hidden;display:flex;flex-direction:column;}
 #hud{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(0,0,0,0.3);z-index:10;flex-shrink:0;}
 .hud-score{font-size:22px;font-weight:900;color:#ffd93b;}
 .hud-tempo{font-size:20px;font-weight:900;color:#fff;}
@@ -97,7 +97,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 <div id="screen-cadastro" class="screen active">
   <div id="cadastro-content">
   <div class="game-title">Pesca no Gelo 🎣</div>
-  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️</div>
+  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-4</div>
   <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="Rocky">
   <div class="input-group">
     <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
@@ -131,6 +131,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <div id="game-container">
     <div id="hud">
       <div class="hud-score" id="hud-score">🐟 0</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:700;">v10.07-4</div>
       <div class="hud-tempo" id="hud-tempo">⏱️ 60</div>
     </div>
     <canvas id="canvas"></canvas>
