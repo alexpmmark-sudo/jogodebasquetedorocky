@@ -539,7 +539,7 @@ function terminarJogo() {
 }
 function scoreValido() {
   if (score % 5 !== 0) return false;
-  if (score > DURACAO * 40 + 20) return false; // teto físico
+  if (score > DURACAO * 60 + 20) return false; // teto físico
   if (!Number.isInteger(score) || score < 0) return false;
   return true;
 }
@@ -583,7 +583,7 @@ async function verRanking() {
     const q = fbQuery(fbCollection(db, 'ranking'), fbOrderBy('timestamp','asc'));
     const snap = await fbGetDocs(q);
     let todos = snap.docs.map(d => d.data()).filter(r => r.jogo === 'pescagelo');
-    todos = todos.filter(r => !r.dur || (r.score||0) <= 60 * 40 + 20);
+    todos = todos.filter(r => !r.dur || (r.score||0) <= 60 * 60 + 20);
 
     // vale só a ÚLTIMA tentativa de cada país
     const porPais = {};
@@ -607,8 +607,8 @@ async function verRanking() {
       <div class="ranking-item ${i===0?'top1':''}">
         <span class="rank-pos">${i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)))}</span>
         <div class="rank-info">
-          <div class="rank-nome">${r.name||'—'}</div>
-          <div class="rank-pais">${r.country||'—'}${r.horaCurta?' · 🕐 '+r.horaCurta:''}</div>
+          <div class="rank-pais" style="font-size:15px;font-weight:700;color:#fff;">${r.country||'—'}</div>
+          <div class="rank-nome" style="font-size:11px;font-weight:400;color:#d6ecf7;">${r.name||'—'}${r.horaCurta?' · 🕐 '+r.horaCurta:''}</div>
           <div class="rank-comp">🔵 Azul ${r.nAzul||0} · 🟡 Grande ${r.nGrande||0} · ⭐ Dourado ${r.nDourado||0} · 🐡 Baiacu ${r.nBaiacu||0}</div>
         </div>
         ${blocoPts}
