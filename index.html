@@ -95,7 +95,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 <div id="screen-cadastro" class="screen active">
   <div id="cadastro-content">
   <div class="game-title">Pesca no Gelo 🎣</div>
-  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-18</div>
+  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-19</div>
   <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="Rocky">
   <div class="input-group">
     <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
@@ -146,7 +146,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
         <div style="font-size:13px;color:#d6ecf7;">O tempo parou. Respira e volta pra pescaria! 🎣</div>
         <button class="btn-jogar" id="btn-continuar" style="max-width:100%;">▶️ CONTINUAR</button>
         <button class="btn-jogar" id="btn-encerrar-pausa" style="max-width:100%;background:#2e8b57;">🏁 ENCERRAR E SALVAR</button>
-        <div style="font-size:9px;color:rgba(255,255,255,0.4);">v10.07-18</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4);">v10.07-19</div>
       </div>
     </div>
   </div>
@@ -251,7 +251,7 @@ function initGame() {
   document.getElementById('hud-score').textContent = '🐟 0';
   document.getElementById('hud-tempo').textContent = '⏱️ 60';
   document.getElementById('hud-tempo').classList.remove('urgente');
-  for (let i=0;i<6;i++) criarPeixeNoMeio();
+  for (let i=0;i<8;i++) criarPeixeNoMeio();
 }
 
 function criarPeixeNoMeio() {
@@ -262,17 +262,17 @@ function criarPeixeNoMeio() {
 function criarPeixe() {
   const rnd = Math.random();
   let tipo;
-  // baiacu aparece bastante (~28%), dourado raro (~5%), grande (~18%), resto pequeno
+  // baiacu ATRAPALHA (~38%), dourado raro (~5%), grande (~15%), resto pequeno
   if (rnd < 0.05) tipo = 'dourado';
-  else if (rnd < 0.33) tipo = 'baiacu';
-  else if (rnd < 0.51) tipo = 'grande';
+  else if (rnd < 0.43) tipo = 'baiacu';
+  else if (rnd < 0.58) tipo = 'grande';
   else tipo = 'pequeno';
 
   const dir = Math.random() < 0.5 ? 1 : -1;
   let r, vel;
   if (tipo === 'dourado') { r = REF*0.055; vel = W*0.011 * (1 + tempoJogo*0.0002); } // voa rápido
   else if (tipo === 'grande') { r = REF*0.075; vel = W*0.0028 * (1 + tempoJogo*0.00025); }
-  else if (tipo === 'baiacu') { r = REF*0.058; vel = W*0.0036 * (1 + tempoJogo*0.00025); }
+  else if (tipo === 'baiacu') { r = REF*0.07; vel = W*0.0028 * (1 + tempoJogo*0.00025); }
   else { r = REF*0.05; vel = W*0.0044 * (1 + tempoJogo*0.00025); }
 
   const yMin = BH + r*1.2, yMax = H - r*1.5;
@@ -512,8 +512,8 @@ function gameLoop() {
 
   // spawn peixes
   spawnTimer++;
-  const intervalo = Math.max(12, 26 - tempoJogo*0.03);
-  const maxPeixes = 8 + Math.floor(tempoJogo/300);
+  const intervalo = Math.max(9, 20 - tempoJogo*0.03);
+  const maxPeixes = 10 + Math.floor(tempoJogo/300);
   if (spawnTimer >= intervalo && peixes.length < maxPeixes) { spawnTimer = 0; criarPeixe(); }
 
   // spawn power-up (de vez em quando)
