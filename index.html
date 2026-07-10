@@ -30,11 +30,14 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 .hud-score{font-size:22px;font-weight:900;color:#ffd93b;}
 .hud-tempo{font-size:20px;font-weight:900;color:#fff;}
 .hud-tempo.urgente{color:#ff5a4a;}
+#btn-pausa{background:rgba(255,255,255,0.9);border:none;border-radius:10px;font-size:18px;padding:6px 12px;cursor:pointer;line-height:1;}
+#btn-pausa:active{transform:scale(0.94);}
 #canvas{width:100%;flex:1;display:block;touch-action:none;}
 
-#intro-overlay,#countdown-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:40;align-items:center;justify-content:center;}
+#intro-overlay,#countdown-overlay,#pausa-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:40;align-items:center;justify-content:center;}
 #intro-overlay{background:rgba(0,0,0,0.85);padding:20px;}
-#intro-overlay.show,#countdown-overlay.show{display:flex;}
+#pausa-overlay{background:rgba(0,0,0,0.8);padding:20px;}
+#intro-overlay.show,#countdown-overlay.show,#pausa-overlay.show{display:flex;}
 .intro-box{background:linear-gradient(180deg,#2a6a95,#173f5c);border:3px solid #ffd93b;border-radius:18px;padding:22px 20px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px;color:#fff;}
 .intro-titulo{font-size:22px;font-weight:900;text-align:center;color:#ffd93b;}
 .intro-item{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;}
@@ -116,7 +119,10 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
   <div id="game-container">
     <div id="hud">
       <div class="hud-score" id="hud-score">🐟 0</div>
-      <div class="hud-tempo" id="hud-tempo">⏱️ 60</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="hud-tempo" id="hud-tempo">⏱️ 60</div>
+        <button id="btn-pausa">⏸️</button>
+      </div>
     </div>
     <canvas id="canvas"></canvas>
     <div id="intro-overlay">
@@ -131,6 +137,13 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
       </div>
     </div>
     <div id="countdown-overlay"><div id="countdown-num">3</div></div>
+    <div id="pausa-overlay">
+      <div class="intro-box">
+        <div class="intro-titulo">⏸️ Pausado</div>
+        <button class="btn-jogar" id="btn-continuar" style="max-width:100%;">▶️ Continuar</button>
+        <button class="btn-jogar" id="btn-encerrar" style="max-width:100%;background:#c0392b;box-shadow:0 4px 20px rgba(192,57,43,0.5);">🏁 Encerrar e Salvar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -191,7 +204,7 @@ function resizeCanvas() {
 }
 
 let nomeJogador = '', paisJogador = '';
-let jogoAtivo = false, jaSlvou = false, animFrame = null, inputTravado = false;
+let jogoAtivo = false, jaSlvou = false, animFrame = null, inputTravado = false, emPausa = false;
 let score = 0, tempoInicio = 0, durSeg = 0;
 const DURACAO = 60;
 let tempoRestante = DURACAO;
@@ -488,7 +501,8 @@ function gameLoop() {
 function roundRectG(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 function prepararJogo() {
-  jaSlvou = false; jogoAtivo = false; inputTravado = false; cancelAnimationFrame(animFrame);
+  jaSlvou = false; jogoAtivo = false; inputTravado = false; emPausa = false; cancelAnimationFrame(animFrame);
+  document.getElementById('pausa-overlay').classList.remove('show');
   showScreen('screen-jogo');
   setTimeout(() => { initGame(); ctx.clearRect(0,0,W,H); drawFundo(); for(const p of peixes) drawPeixe(p); }, 100);
 }
@@ -599,6 +613,25 @@ async function verRanking() {
   } catch(e) { lista.innerHTML = '<div class="loading">Erro ao carregar.</div>'; }
 }
 
+function pausarJogo() {
+  if (!jogoAtivo || emPausa) return;
+  emPausa = true;
+  cancelAnimationFrame(animFrame);
+  document.getElementById('pausa-overlay').classList.add('show');
+}
+function continuarJogo() {
+  if (!emPausa) return;
+  emPausa = false;
+  document.getElementById('pausa-overlay').classList.remove('show');
+  tempoInicio = Date.now() - (DURACAO - tempoRestante) * 1000; // mantém o tempo corrido
+  gameLoop();
+}
+function encerrarESalvar() {
+  emPausa = false;
+  document.getElementById('pausa-overlay').classList.remove('show');
+  terminarJogo();
+}
+
 function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 window.addEventListener('resize', () => { if (jogoAtivo) resizeCanvas(); });
 
@@ -609,6 +642,9 @@ document.getElementById('btn-salvar').addEventListener('click', salvarResultado)
 document.getElementById('btn-jogar-dnv').addEventListener('click', jogarDenovo);
 document.getElementById('btn-voltar-res').addEventListener('click', voltarCadastro);
 document.getElementById('btn-voltar-rank').addEventListener('click', voltarCadastro);
+document.getElementById('btn-pausa').addEventListener('click', pausarJogo);
+document.getElementById('btn-continuar').addEventListener('click', continuarJogo);
+document.getElementById('btn-encerrar').addEventListener('click', encerrarESalvar);
 </script>
 </body>
 </html>
