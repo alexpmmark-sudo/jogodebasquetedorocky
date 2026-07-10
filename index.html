@@ -95,7 +95,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
 <div id="screen-cadastro" class="screen active">
   <div id="cadastro-content">
   <div class="game-title">Pesca no Gelo 🎣</div>
-  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-14</div>
+  <div class="game-subtitle">Copa dos Valores 2026 🐻‍❄️ · v10.07-15</div>
   <img id="rocky-cadastro-img" class="rocky-cadastro" src="" alt="Rocky">
   <div class="input-group">
     <input type="text" id="input-nome" placeholder="Seu nome" maxlength="30">
@@ -153,7 +153,7 @@ body{background:#0a2233;font-family:'Segoe UI',sans-serif;min-height:100vh;displ
         <div style="font-size:13px;color:#d6ecf7;">O tempo parou. Respira e volta pra pescaria! 🎣</div>
         <button class="btn-jogar" id="btn-continuar" style="max-width:100%;">▶️ CONTINUAR</button>
         <button class="btn-jogar" id="btn-encerrar-pausa" style="max-width:100%;background:#2e8b57;">🏁 ENCERRAR E SALVAR</button>
-        <div style="font-size:9px;color:rgba(255,255,255,0.4);">v10.07-14</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4);">v10.07-15</div>
       </div>
     </div>
   </div>
@@ -258,9 +258,14 @@ function initGame() {
   document.getElementById('hud-score').textContent = '🐟 0';
   document.getElementById('hud-tempo').textContent = '⏱️ 60';
   document.getElementById('hud-tempo').classList.remove('urgente');
-  for (let i=0;i<3;i++) criarPeixe();
+  for (let i=0;i<6;i++) criarPeixeNoMeio();
 }
 
+function criarPeixeNoMeio() {
+  criarPeixe();
+  const p = peixes[peixes.length - 1];
+  if (p) p.x = W * (0.12 + Math.random() * 0.76); // espalhados pela tela
+}
 function criarPeixe() {
   const rnd = Math.random();
   let tipo;
@@ -514,8 +519,8 @@ function gameLoop() {
 
   // spawn peixes
   spawnTimer++;
-  const intervalo = Math.max(18, 40 - tempoJogo*0.03);
-  const maxPeixes = 6 + Math.floor(tempoJogo/300);
+  const intervalo = Math.max(12, 26 - tempoJogo*0.03);
+  const maxPeixes = 8 + Math.floor(tempoJogo/300);
   if (spawnTimer >= intervalo && peixes.length < maxPeixes) { spawnTimer = 0; criarPeixe(); }
 
   // spawn power-up (de vez em quando)
