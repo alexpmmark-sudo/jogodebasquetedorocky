@@ -29,7 +29,7 @@ body{background:#141828;display:flex;justify-content:center;}
 .hud-item{color:#ffe9c9;font-size:16px;font-weight:900;}
 .hud-ver{font-size:10px;color:rgba(255,255,255,0.35);font-weight:700;}
 #btn-encerrar{background:#c8102e;border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:900;padding:6px 12px;cursor:pointer;}
-#palco{flex:1;display:flex;flex-direction:column;padding:10px 12px;overflow:hidden;}
+#palco{flex:1;display:flex;flex-direction:column;padding:10px 12px 0;overflow-y:auto;}
 
 .sec-label{color:#c99a6a;font-size:11px;font-weight:800;margin:4px 2px;letter-spacing:0.5px;}
 #fila{display:flex;justify-content:space-around;align-items:flex-start;min-height:96px;}
@@ -53,8 +53,8 @@ body{background:#141828;display:flex;justify-content:center;}
 .mont-item{background:#46372a;border-radius:8px;padding:5px 9px;font-size:18px;}
 #montando .hint{color:#b4a082;font-size:13px;font-weight:700;}
 
-#ingredientes{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:auto;padding-top:10px;}
-.ing-btn{border:none;border-radius:14px;padding:16px 10px;font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center;transition:transform 0.06s;}
+#ingredientes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;padding-bottom:52px;}
+.ing-btn{border:none;border-radius:14px;padding:13px 10px;font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center;transition:transform 0.06s;}
 .ing-btn:active{transform:scale(0.95);}
 .ing-btn .emo{font-size:22px;}
 
@@ -104,7 +104,7 @@ body{background:#141828;display:flex;justify-content:center;}
 
 <div id="screen-cadastro" class="screen bg active">
   <div class="game-title">MONTA A POUTINE 🍟</div>
-  <div class="game-subtitle">Copa dos Valores 2026 🍁 · poutine-v2</div>
+  <div class="game-subtitle">Copa dos Valores 2026 🍁 · poutine-v3</div>
   <img class="capa" id="capa-img" alt="Monta a Poutine">
   <div class="input-group"><input id="inp-nome" maxlength="30" placeholder="Seu nome"></div>
   <div class="input-group">
@@ -159,7 +159,7 @@ body{background:#141828;display:flex;justify-content:center;}
         <div style="font-size:13px;color:#e0b98f;">Você fez <b id="pause-pts" style="color:#ffd93b;">0 pts</b>! Quer encerrar e salvar, ou continuar montando?</div>
         <button class="btn-jogar" id="btn-continuar" style="max-width:100%;">▶️ CONTINUAR</button>
         <button class="btn-jogar" id="btn-finalizar" style="max-width:100%;background:#2e8b57;box-shadow:0 5px 0 #1d5c39;">🏁 ENCERRAR E SALVAR</button>
-        <div style="font-size:9px;color:rgba(255,255,255,0.4);">poutine-v2</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4);">poutine-v3</div>
       </div>
     </div>
   </div>
